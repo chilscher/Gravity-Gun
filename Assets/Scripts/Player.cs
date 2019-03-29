@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour{
-
-    public GameObject planet;
+    
+    public Planet planet;
     private Vector2 downDirection; //a unit vector in the direction of down
     public float playerMass = 1f;
     public Vector2 velocity;
@@ -14,7 +14,7 @@ public class Player : MonoBehaviour{
     private float accelerationDueToGravity;
     private float distanceToPlanetSurface;
     public float rotationSpeed = 5f;
-    public float gravity = 0.2f; //temporary, remove when gravity based on mass and distance is calculated
+    public float staticGravity = 0.2f;
     public float gravitationalConstant = 1f;
     public bool useStaticGravity = false;
 
@@ -67,7 +67,7 @@ public class Player : MonoBehaviour{
         else {
             //will eventually vary with distance to planet, planet mass, and player mass
             if (useStaticGravity) {
-                accelerationDueToGravity = gravity;
+                accelerationDueToGravity = staticGravity;
             }
             else {
                 //force = GMm/(d^2), acceleration = GM/(d^2)
@@ -91,6 +91,7 @@ public class Player : MonoBehaviour{
 
     void movePlayer(){
         //moves the player in the direction of their velocity, unless their chosen planet is in the way
+        //should this change so it stops the player if ANY planet is in the way?
         Vector2 changeInPosition = velocity * Time.deltaTime;
         float changeDistance = changeInPosition.magnitude;
         float distanceToPlanetSurface = getDistanceToPlanetSurface();
@@ -128,5 +129,11 @@ public class Player : MonoBehaviour{
         float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90;
         Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.forward);
         transform.rotation = Quaternion.Slerp(transform.rotation, rotation, rotationSpeed * Time.deltaTime);
+    }
+
+    public void changePlanet(Planet p) {
+        //if isOnPlanet
+        //  disable collisions with old planet for X seconds - maybe a public variable?
+        planet = p;
     }
 }
