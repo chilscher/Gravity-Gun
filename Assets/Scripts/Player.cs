@@ -3,36 +3,34 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour{
-    
-    public Planet planet;
-    private Vector2 downDirection; //a unit vector in the direction of down
-    public float playerMass = 1f;
+
+    //player attributes
     public Vector2 velocity;
-    private bool isOnPlanet = false;
+    public float rotationSpeed = 0.7f; //how fast the player and camera rotate
     //private bool canWalk;
     //private bool canJump;
-    private float accelerationDueToGravity;
+
+    //planet attributes -- this planet is the one the player is falling towards / walking on
+    public Planet planet;
+    private bool isOnPlanet = false;
+    private Vector2 downDirection; //a unit vector in the direction of down
     private float distanceToPlanetSurface;
-    public float rotationSpeed = 0.7f; //how fast the player and camera rotate
+
+    //gravitational attributes -- determines how fast the player falls
+    private float accelerationDueToGravity;
+    public bool useStaticGravity = false;
     public float staticGravity = 0.2f;
     public float gravitationalConstant = 1f;
-    public bool useStaticGravity = false;
 
-
+    //collision attributes -- if the player can collide with certain objects
     private List<Planet> planetsToIgnoreCollisions = new List<Planet>(); //after a new planet is clicked, the old planet is added to a list of planets to ignore a collision with
-    private List<float> timeLeftToIgnoreCollisions = new List<float>(); //the time remaining for a planet to be ignored. when hits 0, the planet and time are popped.
-    public float ignorePlanetDuration = 1f; // number of seconds that a collision with a planet is ignored for
-
-    // Start is called before the first frame update
+ 
     void Start(){
-        //velocity = Vector2.zero;
-        
     }
-
-    // Update is called once per frame
+    
     void Update() {
-        countDownIgnoreTimers();
-        renewTimerInsidePlanet();
+        countDownIgnoredPlanetTimers();
+        renewPlanetIgnoreTimersIfApplicable();
         stopIgnoringTimedOutCollisions();
         calculateDown();
         calculateIsOnPlanet();
@@ -41,42 +39,22 @@ public class Player : MonoBehaviour{
         modifyVelocityDueToGravity();
         movePlayer();
         rotatePlayerTowardsPlanet();
-
     }
 
-    void calculateDown() {
-        //sets downDirection to be a unit vector pointing in the downward direction
-        Vector2 planetCenter = planet.transform.position;
-        Vector2 playerCenter = transform.position;
-        Vector2 nonUnitDown = planetCenter - playerCenter;
-        nonUnitDown.Normalize();
-        downDirection = nonUnitDown;
-    }
 
-    void calculateIsOnPlanet() {
-        //determines if the player is on their destination planet
-        Collider2D playerCollider = GetComponent<BoxCollider2D>();
-        Collider2D planetCollider = planet.GetComponent<CircleCollider2D>();
-        isOnPlanet = (playerCollider.IsTouching(planetCollider));
-        //Debug.Log("On planet? - " + isOnPlanet.ToString());
-    }
 
+    //----------BASIC MOVEMENT AND PLANET SELECTION FUNCTIONS---------------
+    
     void reduceSpeedIfOnPlanet() {
-        if (isOnPlanet) {
-            velocity = Vector2.zero;
-        }
+        if (isOnPlanet) { velocity = Vector2.zero;    }
     }
 
     void calculateAccelerationDueToGravity() {
         //calculates the acceleration due to gravity toward the specified planet
-        if (isOnPlanet) {
-            accelerationDueToGravity = 0f;
-        }
+        if (isOnPlanet) { accelerationDueToGravity = 0f;        }
         else {
             //will eventually vary with distance to planet, planet mass, and player mass
-            if (useStaticGravity) {
-                accelerationDueToGravity = staticGravity;
-            }
+            if (useStaticGravity) { accelerationDueToGravity = staticGravity;        }
             else {
                 //force = GMm/(d^2), acceleration = GM/(d^2)
                 float G = gravitationalConstant;
@@ -111,12 +89,57 @@ public class Player : MonoBehaviour{
         pos += changeInPosition;
         transform.position = pos;
     }
-
     
+    void rotatePlayerTowardsPlanet() {
+        //rotates the player (and its child object the main camera) towards the planet
+        Vector2 direction = downDirection;
+        float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90;
+        Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, rotationSpeed * Time.deltaTime);
+    }
+
+    public void clickedPlanet(Planet p) {
+        //if p is an applicable planet, set it to be the player's down planet
+        if (playerIsInsidePlanet(p) == false) { changePlanet(p);     }
+        else { Debug.Log("You can't select this planet, because you are inside of it!");    }
+    }
+
+    public void changePlanet(Planet p) {
+        //add old planet on list of planets to ignore
+        Planet previousPlanet = planet;
+        addPlanetToIngoreList(previousPlanet);
+        //if new planet is on ignore list, remove it
+        Planet newPlanet = p;
+        removePlanetFromIgnoreList(p);
+        planet = p;
+    }
+
+
+
+
+
+
+    //-----------FUNCTIONS THAT GIVE INFORMATION ABOUT THE PLAYER'S RELATION TO A PLANET
+
+    void calculateDown() {
+        //sets downDirection to be a unit vector pointing in the downward direction
+        Vector2 planetCenter = planet.transform.position;
+        Vector2 playerCenter = transform.position;
+        Vector2 nonUnitDown = planetCenter - playerCenter;
+        nonUnitDown.Normalize();
+        downDirection = nonUnitDown;
+    }
+
+    void calculateIsOnPlanet() {
+        //determines if the player is on their destination planet
+        Collider2D playerCollider = GetComponent<BoxCollider2D>();
+        Collider2D planetCollider = planet.GetComponent<CircleCollider2D>();
+        isOnPlanet = (playerCollider.IsTouching(planetCollider));
+        //Debug.Log("On planet? - " + isOnPlanet.ToString());
+    }
+
     float getDistanceToPlanetSurface() {
-        if (isOnPlanet) {
-            return 0f;
-        }
+        if (isOnPlanet) { return 0f;     }
         else {
             float distanceToCenter = getDistanceToPlanetCenter();
             float planetRadius = planet.GetComponent<CircleCollider2D>().radius;
@@ -131,53 +154,60 @@ public class Player : MonoBehaviour{
         float distanceToCenter = vectorToCenter.magnitude;
         return distanceToCenter;
     }
-    
-    void rotatePlayerTowardsPlanet() {
-        //rotates the player (and its child object the main camera) towards the planet
-        Vector2 direction = downDirection;
-        float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90;
-        Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.forward);
-        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, rotationSpeed * Time.deltaTime);
+
+    bool playerIsInsidePlanet(Planet p) {
+        //the player is inside the planet if any of their vertices are inside the planet's radius or if they intersect with the planet's surface
+        //see if player collides with planet's surface -- collisions have to be enabled for this
+        BoxCollider2D playerCollider = GetComponent<BoxCollider2D>();
+        CircleCollider2D planetCollider = p.GetComponent<CircleCollider2D>();
+        enableCollisionWithPlanet(p);
+        bool isOnSurface = (playerCollider.IsTouching(planetCollider));
+        if (planetsToIgnoreCollisions.Contains(p)) { disableCollisionWithPlanet(p); }    //if the collision should be disabled, disable it again
+        if (isOnSurface) {  return true;     }
+
+        //see if player's edges are inside the planet's radius
+        Vector2 planetCenter = p.transform.position;
+        float colliderRadius = planetCollider.radius;
+        float planetScale = p.transform.lossyScale.x; //asumes a uniform scaling
+        float planetRadius = colliderRadius * planetScale;
+        Vector2 playerCenter = transform.position;
+        float d = Vector2.Distance(playerCenter, planetCenter);
+        bool isInCenter = Vector2.Distance(playerCenter, planetCenter) < planetRadius;
+        if (isInCenter) { return true;      }
+
+        return false;
     }
 
-    public void changePlanet(Planet p) {
-        //add old planet on list of planets to ignore
-        Planet previousPlanet = planet;
-        addPlanetToIngoreList(previousPlanet);
-        //if new planet is on ignore list, remove it
-        Planet newPlanet = p;
-        removePlanetFromIgnoreList(p);
-        planet = p;
-    }
+
+
+
+
+    //----------FUNCTIONS THAT ALLOW THE PLAYER TO IGNORE COLLISIONS WITH RECENTLY-SELECTED PLANETS------------
 
     void addPlanetToIngoreList(Planet p) {
         //adds p to the list of planets to ignore collisions with, for a duration of ignorePlanetDuration
-        if (arePlanetCollisionsIgnored(p) == false) {
+        if (planetsToIgnoreCollisions.Contains(p) == false) {
             //do not ignore or add to list if planet is already present in list
             disableCollisionWithPlanet(p);
             planetsToIgnoreCollisions.Add(p);
-            timeLeftToIgnoreCollisions.Add(ignorePlanetDuration);
+            p.startIgnoreTimer();
         }
     }
 
-    void countDownIgnoreTimers() {
+    void countDownIgnoredPlanetTimers() {
         //reduces the timer on ignored planets
-        for (int i = 0; i < timeLeftToIgnoreCollisions.Count; i++) {
-            timeLeftToIgnoreCollisions[i] -= Time.deltaTime;
+        foreach (Planet p in planetsToIgnoreCollisions) {
+            p.countDownIgnoreTimer();
         }
     }
 
     void stopIgnoringTimedOutCollisions() {
         //removes planets and times from the ignore collision lists if their timers are down to 0
         //if the player is inside a planet, the planet/timer combo is not removed
-        for (int i = 0; i < timeLeftToIgnoreCollisions.Count; i++) {
-            float t = timeLeftToIgnoreCollisions[i];
-            Planet p = planetsToIgnoreCollisions[i];
-            if (t <= 0) {
-                if (playerIsInsidePlanet(p) == false) {
-                    removePlanetFromIgnoreList(p);
-                }
-
+        foreach (Planet p in planetsToIgnoreCollisions) {
+            if (p.hasIgnoreTimerFinished()) {
+                p.clearIgnoreTimer();
+                removePlanetFromIgnoreList(p);
             }
         }
     }
@@ -196,73 +226,19 @@ public class Player : MonoBehaviour{
 
     }
 
-    bool playerIsInsidePlanet(Planet p) {
-        //the player is inside the planet if any of their vertices are inside the planet's radius or if they intersect with the planet's surface
-        //see if player collides with planet's surface
-        BoxCollider2D playerCollider = GetComponent<BoxCollider2D>();
-        CircleCollider2D planetCollider = p.GetComponent<CircleCollider2D>();
-        //collisions have to be enabled to detect if the player is touching the surface
-        enableCollisionWithPlanet(p);
-        bool isOnSurface = (playerCollider.IsTouching(planetCollider));
-        //if the collision should be disabled, disable it again
-        if (arePlanetCollisionsIgnored(p)) {
-            disableCollisionWithPlanet(p);
-        }
-        if (isOnSurface) {
-            return true;
-        }
-        //see if player's edges are inside the planet's radius
-        Vector2 planetCenter = p.transform.position;
-        float colliderRadius = planetCollider.radius;
-        float planetScale = p.transform.lossyScale.x; //asumes a uniform scaling
-        float planetRadius = colliderRadius * planetScale;
-
-
-        Vector2 playerCenter = transform.position;
-        float d = Vector2.Distance(playerCenter, planetCenter);
-        bool isInCenter = Vector2.Distance(playerCenter, planetCenter) < planetRadius;
-        if (isInCenter) {
-            return true;
-        }
-
-
-        return false;
-    }
-
     void removePlanetFromIgnoreList(Planet p) {
         //Planet p can once again be collided with
-        if (arePlanetCollisionsIgnored(p)) {
-            for (int i = 0; i < planetsToIgnoreCollisions.Count; i++) {
-                if (p == planetsToIgnoreCollisions[i]) {
-                    enableCollisionWithPlanet(p);
-                    planetsToIgnoreCollisions.RemoveAt(i);
-                    timeLeftToIgnoreCollisions.RemoveAt(i);
-                }
-            }
+        if (planetsToIgnoreCollisions.Contains(p)) {
+            enableCollisionWithPlanet(p);
+            planetsToIgnoreCollisions.Remove(p);
 
         }
     }
 
-    bool arePlanetCollisionsIgnored(Planet p) {
-        //returns true if collisions with Planet p are being ignored
-        return (planetsToIgnoreCollisions.Contains(p));
-    }
-
-    public void clickedPlanet(Planet p) {
-        //if p is an applicable planet, set it to be the player's down planet
-        if (playerIsInsidePlanet(p) == false) {
-            changePlanet(p);
-        }
-    }
-
-    void renewTimerInsidePlanet() {
+    void renewPlanetIgnoreTimersIfApplicable() {
         //if the player is inside one of the collision-ignored planets, reset its countdown timer to the max
-        for (int i = 0; i < timeLeftToIgnoreCollisions.Count; i++) {
-            Planet p = planetsToIgnoreCollisions[i];
-            if (playerIsInsidePlanet(p)) {
-                //if the player is still inside the planet, reset the ignore timer
-                timeLeftToIgnoreCollisions[i] = ignorePlanetDuration;
-            }
+        foreach (Planet p in planetsToIgnoreCollisions) {
+            if (playerIsInsidePlanet(p)) { p.renewIgnoreTimer();      }
         }
     }
 }
