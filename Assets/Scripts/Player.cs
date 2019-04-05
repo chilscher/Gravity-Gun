@@ -7,6 +7,8 @@ public class Player : MonoBehaviour{
     //player attributes
     public Vector2 velocity;
     public float rotationSpeed = 0.7f; //how fast the player and camera rotate
+    public float rotationSpeedScaleOnPlanet = 3f; //how much faster the player rotates when on a planet
+    private float activeRotationSpeed; //the rotation speed the player is currently using
     //private bool canWalk;
     //private bool canJump;
 
@@ -38,6 +40,7 @@ public class Player : MonoBehaviour{
         calculateAccelerationDueToGravity();
         modifyVelocityDueToGravity();
         movePlayer();
+        calculateRotateSpeed();
         rotatePlayerTowardsPlanet();
     }
 
@@ -89,13 +92,18 @@ public class Player : MonoBehaviour{
         pos += changeInPosition;
         transform.position = pos;
     }
+
+    void calculateRotateSpeed() {
+        activeRotationSpeed = rotationSpeed;
+        if (isOnPlanet) { activeRotationSpeed *= rotationSpeedScaleOnPlanet;        }
+    }
     
     void rotatePlayerTowardsPlanet() {
         //rotates the player (and its child object the main camera) towards the planet
         Vector2 direction = downDirection;
         float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90;
         Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.forward);
-        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, rotationSpeed * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, activeRotationSpeed * Time.deltaTime);
     }
 
     public void clickedPlanet(Planet p) {
@@ -204,12 +212,18 @@ public class Player : MonoBehaviour{
     void stopIgnoringTimedOutCollisions() {
         //removes planets and times from the ignore collision lists if their timers are down to 0
         //if the player is inside a planet, the planet/timer combo is not removed
+
+        List<Planet> planetsToRemove = new List<Planet>();
         foreach (Planet p in planetsToIgnoreCollisions) {
             if (p.hasIgnoreTimerFinished()) {
                 p.clearIgnoreTimer();
-                removePlanetFromIgnoreList(p);
+                planetsToRemove.Add(p);
             }
         }
+        foreach (Planet p in planetsToRemove) {
+            removePlanetFromIgnoreList(p);
+        }
+        planetsToRemove = new List<Planet>();
     }
 
     void disableCollisionWithPlanet(Planet p) {
