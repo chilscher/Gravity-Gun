@@ -31,9 +31,12 @@ public class Player : MonoBehaviour{
     }
     
     void Update() {
+        //figure out if the player can stop ignoring any planets
         countDownIgnoredPlanetTimers();
         renewPlanetIgnoreTimersIfApplicable();
         stopIgnoringTimedOutCollisions();
+
+
         calculateDown();
         calculateIsOnPlanet();
         reduceSpeedIfOnPlanet();
@@ -44,10 +47,14 @@ public class Player : MonoBehaviour{
         rotatePlayerTowardsPlanet();
     }
 
+    public void OnCollisionEnter2D(Collision2D collision) {
+        if (collision.gameObject.tag == "Planet") { changePlanet(collision.gameObject.GetComponent<Planet>());       }
+    }
+
 
 
     //----------BASIC MOVEMENT AND PLANET SELECTION FUNCTIONS---------------
-    
+
     void reduceSpeedIfOnPlanet() {
         if (isOnPlanet) { velocity = Vector2.zero;    }
     }

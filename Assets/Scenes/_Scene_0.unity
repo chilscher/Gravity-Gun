@@ -220,6 +220,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: ef1bf2ecc16140f4195ed991ac4136c1,
         type: 3}
+    - target: {fileID: 2238959681720501212, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: m_Mass
+      value: 9.951812
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3961ab2469c94874992db4f261304aad, type: 3}
 --- !u!1001 &669518991
@@ -309,17 +314,22 @@ PrefabInstance:
       propertyPath: m_Density
       value: 0.6
       objectReference: {fileID: 0}
-    - target: {fileID: 2238959681720501213, guid: 3961ab2469c94874992db4f261304aad,
-        type: 3}
-      propertyPath: autoRotationSpeed
-      value: 3
-      objectReference: {fileID: 0}
     - target: {fileID: 2238959681720501203, guid: 3961ab2469c94874992db4f261304aad,
         type: 3}
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 21300000, guid: 4a868e28be12a6349a2742aa1909ed42,
         type: 3}
+    - target: {fileID: 2238959681720501213, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: autoRotationSpeed
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2238959681720501212, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: m_Mass
+      value: 17.065203
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3961ab2469c94874992db4f261304aad, type: 3}
 --- !u!1001 &1177757471
@@ -501,6 +511,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: 2bed99daade80374692348a8299459cb,
         type: 3}
+    - target: {fileID: 2238959681720501212, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: m_Mass
+      value: 74.64694
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3961ab2469c94874992db4f261304aad, type: 3}
 --- !u!1 &1785785619
@@ -686,17 +701,17 @@ PrefabInstance:
       propertyPath: m_Density
       value: 3
       objectReference: {fileID: 0}
-    - target: {fileID: 2238959681720501212, guid: 3961ab2469c94874992db4f261304aad,
-        type: 3}
-      propertyPath: m_Mass
-      value: 3.7700942
-      objectReference: {fileID: 0}
     - target: {fileID: 2238959681720501203, guid: 3961ab2469c94874992db4f261304aad,
         type: 3}
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: 21300000, guid: ef1bf2ecc16140f4195ed991ac4136c1,
         type: 3}
+    - target: {fileID: 2238959681720501212, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: m_Mass
+      value: 22.620565
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3961ab2469c94874992db4f261304aad, type: 3}
 --- !u!1001 &4797380981206485478
@@ -751,6 +766,11 @@ PrefabInstance:
       propertyPath: useStaticGravity
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4797380980953733942, guid: d69a208da7bff2841899411f00db1372,
+        type: 3}
+      propertyPath: velocity.x
+      value: 0.8
+      objectReference: {fileID: 0}
     - target: {fileID: 4797380980953733943, guid: d69a208da7bff2841899411f00db1372,
         type: 3}
       propertyPath: m_Simulated
@@ -779,7 +799,7 @@ PrefabInstance:
     - target: {fileID: 4797380981054157209, guid: d69a208da7bff2841899411f00db1372,
         type: 3}
       propertyPath: orthographic size
-      value: 4.439622
+      value: 3.8687181
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d69a208da7bff2841899411f00db1372, type: 3}
