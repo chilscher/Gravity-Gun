@@ -6,11 +6,16 @@ public class Player : MonoBehaviour{
 
     //player attributes
     public Vector2 velocity;
+    private Vector2 netAcceleration;
+
+    //rotation attributes -- how fast the player and camera rotate during free fall and while on a planet
     public float rotationSpeed = 0.7f; //how fast the player and camera rotate
-    public float rotationSpeedScaleOnPlanet = 3f; //how much faster the player rotates when on a planet
+    public float rotationSpeedScaleOnPlanet = 5f; //how much faster the player rotates when on a planet
     private float activeRotationSpeed; //the rotation speed the player is currently using
     //private bool canWalk;
     //private bool canJump;
+    //public float walkingSpeed = 1f;
+    //public float jumpHeight = 1f;
 
     //planet attributes -- this planet is the one the player is falling towards / walking on
     public Planet planet;
@@ -19,10 +24,10 @@ public class Player : MonoBehaviour{
     private float distanceToPlanetSurface;
 
     //gravitational attributes -- determines how fast the player falls
-    private float accelerationDueToGravity;
     public bool useStaticGravity = false;
     public float staticGravity = 0.2f;
     public float gravitationalConstant = 1f;
+
 
     //collision attributes -- if the player can collide with certain objects
     private List<Planet> planetsToIgnoreCollisions = new List<Planet>(); //after a new planet is clicked, the old planet is added to a list of planets to ignore a collision with
@@ -39,9 +44,10 @@ public class Player : MonoBehaviour{
 
         calculateDown();
         calculateIsOnPlanet();
-        reduceSpeedIfOnPlanet();
-        calculateAccelerationDueToGravity();
-        modifyVelocityDueToGravity();
+        removeDownSpeedIfOnPlanet();
+
+        calculateNetAcceleration();
+        acceleratePlayer();
         movePlayer();
         calculateRotateSpeed();
         rotatePlayerTowardsPlanet();
@@ -54,40 +60,55 @@ public class Player : MonoBehaviour{
 
 
     //----------BASIC MOVEMENT AND PLANET SELECTION FUNCTIONS---------------
+    
+    void calculateNetAcceleration() {
+        //net acceleration = gravity + normal + friction
+        float G = gravitationalConstant;
+        float M = planet.GetComponent<Rigidbody2D>().mass;
+        float d = getDistanceToPlanetCenter();
+        float ag = (G * M) / (d * d);
+        float coefficientOfFriction = planet.coefficientOfFriction;
 
-    void reduceSpeedIfOnPlanet() {
-        if (isOnPlanet) { velocity = Vector2.zero;    }
+        float gravityMagnitude = ag;
+        if (useStaticGravity) { gravityMagnitude = staticGravity;     }
+
+        float normalMagnitude = gravityMagnitude;
+        if (isOnPlanet == false) {
+            normalMagnitude = 0f;
+        }
+
+        float frictionMagnitude = normalMagnitude * coefficientOfFriction;
+        Vector2 frictionDirection = velocity.normalized * -1;
+
+        Vector2 gravityVector = gravityMagnitude * downDirection;
+        Vector2 normalVector = normalMagnitude * downDirection * (-1);
+        Vector2 frictionVector = frictionMagnitude * frictionDirection;
+
+        netAcceleration = gravityVector + normalVector + frictionVector;
     }
 
-    void calculateAccelerationDueToGravity() {
-        //calculates the acceleration due to gravity toward the specified planet
-        if (isOnPlanet) { accelerationDueToGravity = 0f;        }
-        else {
-            //will eventually vary with distance to planet, planet mass, and player mass
-            if (useStaticGravity) { accelerationDueToGravity = staticGravity;        }
-            else {
-                //force = GMm/(d^2), acceleration = GM/(d^2)
-                float G = gravitationalConstant;
-                float M = planet.GetComponent<Rigidbody2D>().mass;
-                float d = getDistanceToPlanetCenter();
-                float a = (G * M) / (d * d);
-                accelerationDueToGravity = a;
-                //Debug.Log("Gravity is: " + accelerationDueToGravity);
-            }
+    void removeDownSpeedIfOnPlanet() {
+        //if the player is on their planet, they immediately lose all downward momentum
+        if (isOnPlanet) {
+            Vector3 v = velocity;
+            Vector3 down = downDirection;
+            Vector3 proj = Vector3.Project(v, down);
+            Vector2 downProjection = proj; //amount of velocity that is in the down direction
+            Vector2 flattenedVelocity = velocity - downProjection;
+            velocity = flattenedVelocity;
         }
     }
-    
-    void modifyVelocityDueToGravity() {
-        float changeInSpeed = Time.deltaTime * accelerationDueToGravity; //change in vector trajectory
-        Vector2 changeInVelocity = downDirection * changeInSpeed;
-        velocity += changeInVelocity;
-        //Debug.Log("X Speed: " + velocity.x + "     Y Speed: " + velocity.y);
-        
+
+    void acceleratePlayer() {
+        //applies the net acceleration to the player
+        Vector2 velocityChange = Time.deltaTime * netAcceleration;
+        velocity += velocityChange;
     }
 
     void movePlayer(){
         //moves the player in the direction of their velocity, unless their chosen planet is in the way
         //should this change so it stops the player if ANY planet is in the way?
+
         Vector2 changeInPosition = velocity * Time.deltaTime;
         float changeDistance = changeInPosition.magnitude;
         float distanceToPlanetSurface = getDistanceToPlanetSurface();
@@ -98,6 +119,7 @@ public class Player : MonoBehaviour{
         Vector2 pos = transform.position;
         pos += changeInPosition;
         transform.position = pos;
+        
     }
 
     void calculateRotateSpeed() {

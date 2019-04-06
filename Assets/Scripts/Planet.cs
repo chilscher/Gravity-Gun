@@ -12,6 +12,7 @@ public class Planet : MonoBehaviour
     //public float orbitalEccentricity = 1f;
     private float ignoreCollisionTimer = 0f;
     public float ignoreCollisionDuration = 1f; //number of seconds that a collision with the player is ignored for
+    public float coefficientOfFriction = 0.6f; //0 is no friction, 1 is equal to normal force
 
     // Start is called before the first frame update
     void Start()

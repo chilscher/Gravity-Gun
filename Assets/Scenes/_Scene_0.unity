@@ -320,15 +320,15 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: 4a868e28be12a6349a2742aa1909ed42,
         type: 3}
-    - target: {fileID: 2238959681720501213, guid: 3961ab2469c94874992db4f261304aad,
-        type: 3}
-      propertyPath: autoRotationSpeed
-      value: 3
-      objectReference: {fileID: 0}
     - target: {fileID: 2238959681720501212, guid: 3961ab2469c94874992db4f261304aad,
         type: 3}
       propertyPath: m_Mass
       value: 17.065203
+      objectReference: {fileID: 0}
+    - target: {fileID: 2238959681720501213, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: autoRotationSpeed
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3961ab2469c94874992db4f261304aad, type: 3}
@@ -394,15 +394,20 @@ PrefabInstance:
       propertyPath: m_Density
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2238959681720501212, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: m_Mass
+      value: 16.195694
+      objectReference: {fileID: 0}
     - target: {fileID: 2238959681720501213, guid: 3961ab2469c94874992db4f261304aad,
         type: 3}
       propertyPath: autoRotationSpeed
       value: -2
       objectReference: {fileID: 0}
-    - target: {fileID: 2238959681720501212, guid: 3961ab2469c94874992db4f261304aad,
+    - target: {fileID: 2238959681720501213, guid: 3961ab2469c94874992db4f261304aad,
         type: 3}
-      propertyPath: m_Mass
-      value: 16.195694
+      propertyPath: coefficientOfFriction
+      value: 0.6
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3961ab2469c94874992db4f261304aad, type: 3}
@@ -712,6 +717,11 @@ PrefabInstance:
       propertyPath: m_Mass
       value: 22.620565
       objectReference: {fileID: 0}
+    - target: {fileID: 2238959681720501213, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: coefficientOfFriction
+      value: 0.1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3961ab2469c94874992db4f261304aad, type: 3}
 --- !u!1001 &4797380981206485478
@@ -801,5 +811,11 @@ PrefabInstance:
       propertyPath: orthographic size
       value: 3.8687181
       objectReference: {fileID: 0}
+    - target: {fileID: 4797380980953733928, guid: d69a208da7bff2841899411f00db1372,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 2b7f2095fd51a644395b1b79ff6105e7,
+        type: 3}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d69a208da7bff2841899411f00db1372, type: 3}
