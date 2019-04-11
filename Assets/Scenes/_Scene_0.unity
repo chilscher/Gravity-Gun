@@ -394,20 +394,35 @@ PrefabInstance:
       propertyPath: m_Density
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2238959681720501200, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: m_Offset.x
+      value: 0.08485309
+      objectReference: {fileID: 0}
+    - target: {fileID: 2238959681720501200, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: m_Offset.y
+      value: 0.06931581
+      objectReference: {fileID: 0}
+    - target: {fileID: 2238959681720501200, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: m_Radius
+      value: 3.5390782
+      objectReference: {fileID: 0}
     - target: {fileID: 2238959681720501212, guid: 3961ab2469c94874992db4f261304aad,
         type: 3}
       propertyPath: m_Mass
-      value: 16.195694
+      value: 16.310577
       objectReference: {fileID: 0}
     - target: {fileID: 2238959681720501213, guid: 3961ab2469c94874992db4f261304aad,
         type: 3}
       propertyPath: autoRotationSpeed
-      value: -2
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 2238959681720501213, guid: 3961ab2469c94874992db4f261304aad,
         type: 3}
       propertyPath: coefficientOfFriction
-      value: 0.6
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3961ab2469c94874992db4f261304aad, type: 3}
@@ -704,7 +719,7 @@ PrefabInstance:
     - target: {fileID: 2238959681720501200, guid: 3961ab2469c94874992db4f261304aad,
         type: 3}
       propertyPath: m_Density
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 2238959681720501203, guid: 3961ab2469c94874992db4f261304aad,
         type: 3}
@@ -781,6 +796,16 @@ PrefabInstance:
       propertyPath: velocity.x
       value: 0.8
       objectReference: {fileID: 0}
+    - target: {fileID: 4797380980953733942, guid: d69a208da7bff2841899411f00db1372,
+        type: 3}
+      propertyPath: velocity.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4797380980953733942, guid: d69a208da7bff2841899411f00db1372,
+        type: 3}
+      propertyPath: maxWalkingSpeed
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4797380980953733943, guid: d69a208da7bff2841899411f00db1372,
         type: 3}
       propertyPath: m_Simulated
@@ -790,6 +815,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_UseAutoMass
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4797380980953733943, guid: d69a208da7bff2841899411f00db1372,
+        type: 3}
+      propertyPath: m_Mass
+      value: 0.1860172
       objectReference: {fileID: 0}
     - target: {fileID: 4797380981054157158, guid: d69a208da7bff2841899411f00db1372,
         type: 3}
@@ -806,10 +836,15 @@ PrefabInstance:
       propertyPath: m_LocalScale.z
       value: 0.98191
       objectReference: {fileID: 0}
+    - target: {fileID: 4797380981054157158, guid: d69a208da7bff2841899411f00db1372,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.05
+      objectReference: {fileID: 0}
     - target: {fileID: 4797380981054157209, guid: d69a208da7bff2841899411f00db1372,
         type: 3}
       propertyPath: orthographic size
-      value: 3.8687181
+      value: 3.9060862
       objectReference: {fileID: 0}
     - target: {fileID: 4797380980953733928, guid: d69a208da7bff2841899411f00db1372,
         type: 3}
@@ -817,5 +852,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: 2b7f2095fd51a644395b1b79ff6105e7,
         type: 3}
-    m_RemovedComponents: []
+    - target: {fileID: 4797380980953733931, guid: d69a208da7bff2841899411f00db1372,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 4797380980953733931, guid: d69a208da7bff2841899411f00db1372, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: d69a208da7bff2841899411f00db1372, type: 3}
