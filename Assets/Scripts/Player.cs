@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour{
-
+    
     //player attributes
     public Vector2 velocity;
     private Vector2 netAcceleration;
@@ -25,9 +25,7 @@ public class Player : MonoBehaviour{
     //planet attributes -- this planet is the one the player is falling towards / walking on
     public Planet planet;
     private bool isOnPlanet = false;
-    //private bool wasOnPlanet;
     private float distanceToPlanetSurface;
-    //private bool shouldStayOnSurface;
     private Vector2 downDirection; //a unit vector in the direction of down, towards the planet
     private Vector2 leftDirection; // a unit vector tangential to the planet's surface, going counterclockwise
     private Vector2 rightDirection; //a unit vector tangenial to the planet's surface, going clockwise
@@ -46,17 +44,13 @@ public class Player : MonoBehaviour{
     }
     
     void Update() {
-        //Debug.Log("-------- new frame --------");
-        //setWasOnPlanet();
         countDownIgnoredPlanetTimers();
         renewPlanetIgnoreTimersIfApplicable();
         stopIgnoringTimedOutCollisions();
         
         calculateDirections();
         calculateIsOnPlanet();
-        //Debug.Log("is player on planet?: " + isOnPlanet);
         removeDownSpeedIfOnPlanet();
-        //calculateShouldStayOnSurface();
 
         calculateCanWalk();
         calculateIsWalking();
@@ -65,14 +59,9 @@ public class Player : MonoBehaviour{
         calculateNetAcceleration();
         acceleratePlayer();
         movePlayer();
-        //calculateIsOnPlanet();
-        //stayOnSurface();
         rotatePlayerTowardsPlanet();
         
         rotateVelocityToHorizontal();
-        calculateIsOnPlanet();
-        //Debug.Log("is player on planet?: " + isOnPlanet);
-        //Debug.Log("is player bottom = down: " + (downDirection == playerBottom));
 
     }
 
@@ -84,14 +73,6 @@ public class Player : MonoBehaviour{
 
     //----------BASIC MOVEMENT AND PLANET SELECTION FUNCTIONS---------------
     
-        /*
-    void calculateShouldStayOnSurface() {
-        shouldStayOnSurface = false;
-        if (isOnPlanet) {
-            shouldStayOnSurface = true;
-        }
-    }
-    */
     void calculateCanWalk() { canWalk = isOnPlanet; }
 
     void calculateIsWalking() {
@@ -149,11 +130,6 @@ public class Player : MonoBehaviour{
                     //Debug.Log("going too fast");
                 }
             }
-            /*
-            else {
-                Debug.Log("you are not walking on the surface of the planet");
-            }
-            */
         }
 
         if (walkingMagnitude > 0) {
@@ -170,30 +146,14 @@ public class Player : MonoBehaviour{
         Vector2 frictionVector = frictionMagnitude * frictionDirection;
         Vector2 walkingVector = walkingMagnitude * walkDir;
 
+        //scale down normal force to town down jitters, but not enough to make the player fly off -- scale down more on high-friction planets
+        if (isOnPlanet) {
+            float f = planet.coefficientOfFriction;
+            float Nscale = 0.9f - f;
+            normalVector *= Nscale;
+        }
 
         netAcceleration = gravityVector + normalVector + frictionVector + walkingVector;
-        /*
-        //after all that, if normal force is enough to elevate player off of planet, then tone it down
-        if (isOnPlanet) {
-            Vector3 na = netAcceleration;
-            Vector3 up = upDirection;
-            Vector3 proj = Vector3.Project(na, up);
-            Vector2 upComponent = proj; //amount of velocity that is in the down direction
-            if (upComponent.magnitude > 0) {
-                //remove upComponent from net Acceleration
-                netAcceleration -= upComponent;
-            }
-
-        }
-        */
-        /*
-        if (isOnPlanet) {
-            netAcceleration = frictionVector + walkingVector + gravityVector;
-        }
-        else {
-            netAcceleration = gravityVector + normalVector + frictionVector + walkingVector;
-        }
-        */
     }
 
     void removeDownSpeedIfOnPlanet() {
@@ -212,7 +172,6 @@ public class Player : MonoBehaviour{
         //applies the net acceleration to the player
         Vector2 velocityChange = Time.deltaTime * netAcceleration;
         velocity += velocityChange;
-        Debug.Log(velocity.magnitude);
     }
 
     void movePlayer(){
@@ -227,36 +186,6 @@ public class Player : MonoBehaviour{
         transform.position = pos;
         
     }
-    /*
-    void stayOnSurface() {
-        //if the player should stay on their planet's surface and they are not on it, move them back down
-        if (shouldStayOnSurface) {
-            
-            Collider2D playerCollider = GetComponent<CircleCollider2D>();
-            Collider2D planetCollider = planet.GetComponent<CircleCollider2D>();
-            float d = playerCollider.Distance(planetCollider).distance;
-            
-            bool i = (playerCollider.IsTouching(planetCollider));
-            
-            if (isOnPlanet == false) {
-
-                float planetDistance = getDistanceToPlanetSurface();
-                float playerDistance = GetComponent<CircleCollider2D>().radius;
-                float distanceToCollision = planetDistance - playerDistance;
-                //float distanceToCollision = planetDistance;
-                Vector2 direction = downDirection;
-                Vector2 changeInPosition = direction * distanceToCollision;
-                Vector2 pos = transform.position;
-                pos += changeInPosition;
-                transform.position = pos;
-                if (changeInPosition != Vector2.zero) {
-                    Debug.Log("moved player back to planet");
-
-                }
-            }
-        }
-    }
-    */
 
     
     void rotatePlayerTowardsPlanet() {
@@ -284,20 +213,7 @@ public class Player : MonoBehaviour{
         else if (isOnPlanet && midSpeed) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 0.06f);     }
         if (isOnPlanet && highSpeed && lowAngle) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1); }
         else if (isOnPlanet && highSpeed) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, .07f);     }
-        /*
-        if (isOnPlanet && velocity.magnitude > rotationSpeed) {
-            float speedtotal = 0.15f * 100;
-            float rotspeed = speedtotal / velocity.magnitude; //the faster you are going, the faster you rotate
-            transform.rotation = Quaternion.Slerp(transform.rotation, rotation, rotspeed * Time.deltaTime);
-            //transform.rotation = Quaternion.Slerp(transform.rotation, rotation, velocity.magnitude * Time.deltaTime);
-
-        }
-        else { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, rotationSpeed * Time.deltaTime);     }//use static rotation rate
-        */
-        else {
-            transform.rotation = Quaternion.Slerp(transform.rotation, rotation, rotationSpeed * Time.deltaTime);
-
-        }
+        else { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, rotationSpeed * Time.deltaTime);        }
     }
     
 
@@ -339,6 +255,15 @@ public class Player : MonoBehaviour{
 
     }
 
+    void stopPlayerOnDensePlanets() {
+        //if the player's speed is low enough, they will be stopped. Threshold speed increases with planet density
+        float density = planet.GetComponent<CircleCollider2D>().density;
+        float threshold = 0.05f * density;
+        if (isOnPlanet && velocity.magnitude < threshold) {
+            velocity = Vector2.zero;
+        }
+    }
+
 
 
 
@@ -375,12 +300,7 @@ public class Player : MonoBehaviour{
         isOnPlanet = (playerCollider.IsTouching(planetCollider));
         
     }
-
-    /*
-    void setWasOnPlanet() {
-        wasOnPlanet = isOnPlanet;
-    }
-    */
+    
     float getDistanceToPlanetSurface() {
         if (isOnPlanet) { return 0f;     }
         else {
