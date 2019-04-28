@@ -10,8 +10,6 @@ public class Planet : MonoBehaviour
     //public Planet orbitingAround;
     //public float orbitalgSpeed = 1f; //the speed that the planet revolves around its 
     //public float orbitalEccentricity = 1f;
-    private float ignoreCollisionTimer = 0f;
-    public float ignoreCollisionDuration = 1f; //number of seconds that a collision with the player is ignored for
     public float coefficientOfFriction = 0.6f; //0 is no friction, 1 is equal to normal force
 
     // Start is called before the first frame update
@@ -29,16 +27,6 @@ public class Planet : MonoBehaviour
     void OnMouseDown() { player.clickedPlanet(this);    }
 
     void rotateSelf() { transform.Rotate(Vector3.forward * autoRotationSpeed * Time.deltaTime);    }
-
-    public void startIgnoreTimer() { ignoreCollisionTimer = ignoreCollisionDuration;    }
-
-    public void countDownIgnoreTimer() { ignoreCollisionTimer -= Time.deltaTime;    }
-
-    public void clearIgnoreTimer() { ignoreCollisionTimer = 0f;    }
-
-    public void renewIgnoreTimer() { ignoreCollisionTimer = ignoreCollisionDuration;    }
-
-    public bool hasIgnoreTimerFinished() { return (ignoreCollisionTimer <= 0);    }
 
     
 }

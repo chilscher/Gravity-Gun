@@ -36,17 +36,10 @@ public class Player : MonoBehaviour{
     private float staticGravity = 0.2f;
     public float gravitationalConstant = 1f;
 
-
-    //collision attributes -- if the player can collide with certain objects
-    private List<Planet> planetsToIgnoreCollisions = new List<Planet>(); //after a new planet is clicked, the old planet is added to a list of planets to ignore a collision with
- 
     void Start(){
     }
     
     void Update() {
-        countDownIgnoredPlanetTimers();
-        renewPlanetIgnoreTimersIfApplicable();
-        stopIgnoringTimedOutCollisions();
         
         calculateDirections();
         calculateIsOnPlanet();
@@ -122,12 +115,12 @@ public class Player : MonoBehaviour{
         Vector2 walkDir = walkingDirection;
         if (isWalking) {
             walkingMagnitude = walkAccelOnPlanet; //your walking acceleration = your player's walking speed, reduced by the coefficient of friction on your planet
-            //Debug.Log(walkingMagnitude);
+            //print(walkingMagnitude);
             if (velocity.normalized == walkDir) {
                 if (velocity.magnitude > maxWalkingSpeed) { walkingMagnitude = 0f; } //if you are walking in your direction of motion and are above max speed, then walking does not accelerate you
                 else if (((walkAccelOnPlanet * Time.deltaTime) + velocity.magnitude) > maxWalkingSpeed) { //if you are walking in your direction of motion, walking cannot accelerate you above your max walking speed
                     walkingMagnitude = (maxWalkingSpeed - velocity.magnitude) / Time.deltaTime;
-                    //Debug.Log("going too fast");
+                    //print("going too fast");
                 }
             }
         }
@@ -147,10 +140,14 @@ public class Player : MonoBehaviour{
         Vector2 walkingVector = walkingMagnitude * walkDir;
 
         //scale down normal force to town down jitters, but not enough to make the player fly off -- scale down more on high-friction planets
+        //dont scale down at all at low speeds
         if (isOnPlanet) {
-            float f = planet.coefficientOfFriction;
-            float Nscale = 0.9f - f;
-            normalVector *= Nscale;
+            if (velocity.magnitude > planet.coefficientOfFriction) {
+                float f = planet.coefficientOfFriction;
+                float Nscale = 0.9f - f;
+                normalVector *= Nscale;
+
+            }
         }
 
         netAcceleration = gravityVector + normalVector + frictionVector + walkingVector;
@@ -184,6 +181,8 @@ public class Player : MonoBehaviour{
         Vector2 pos = transform.position;
         pos += changeInPosition;
         transform.position = pos;
+
+        print(velocity.magnitude);
         
     }
 
@@ -220,17 +219,11 @@ public class Player : MonoBehaviour{
     public void clickedPlanet(Planet p) {
         //if p is an applicable planet, set it to be the player's down planet
         if (playerIsInsidePlanet(p) == false) { changePlanet(p);     }
-        else { Debug.Log("You can't select this planet, because you are inside of it!");    }
+        else { print("You can't select this planet, because you are inside of it!");    }
     }
 
-    void changePlanet(Planet p) {
-        //add old planet on list of planets to ignore
-        Planet previousPlanet = planet;
-        addPlanetToIngoreList(previousPlanet);
-        //if new planet is on ignore list, remove it
-        Planet newPlanet = p;
-        removePlanetFromIgnoreList(p);
-        planet = p;
+    void changePlanet(Planet newPlanet) {
+        planet = newPlanet;
     }
 
     Vector2 getHorizontalVelocity() {
@@ -253,15 +246,6 @@ public class Player : MonoBehaviour{
             velocity = newVelocity;
         }
 
-    }
-
-    void stopPlayerOnDensePlanets() {
-        //if the player's speed is low enough, they will be stopped. Threshold speed increases with planet density
-        float density = planet.GetComponent<CircleCollider2D>().density;
-        float threshold = 0.05f * density;
-        if (isOnPlanet && velocity.magnitude < threshold) {
-            velocity = Vector2.zero;
-        }
     }
 
 
@@ -320,13 +304,9 @@ public class Player : MonoBehaviour{
 
     bool playerIsInsidePlanet(Planet p) {
         //the player is inside the planet if any of their vertices are inside the planet's radius or if they intersect with the planet's surface
-        //see if player collides with planet's surface -- collisions have to be enabled for this
-        //BoxCollider2D playerCollider = GetComponent<BoxCollider2D>();
         Collider2D playerCollider = GetComponent<CircleCollider2D>();
         CircleCollider2D planetCollider = p.GetComponent<CircleCollider2D>();
-        enableCollisionWithPlanet(p);
         bool isOnSurface = (playerCollider.IsTouching(planetCollider));
-        if (planetsToIgnoreCollisions.Contains(p)) { disableCollisionWithPlanet(p); }    //if the collision should be disabled, disable it again
         if (isOnSurface) {  return true;     }
 
         //see if player's edges are inside the planet's radius
@@ -340,70 +320,5 @@ public class Player : MonoBehaviour{
         if (isInCenter) { return true;      }
 
         return false;
-    }
-
-
-
-
-
-    //----------FUNCTIONS THAT ALLOW THE PLAYER TO IGNORE COLLISIONS WITH RECENTLY-SELECTED PLANETS------------
-
-    void addPlanetToIngoreList(Planet p) {
-        //adds p to the list of planets to ignore collisions with, for a duration of ignorePlanetDuration
-        if (planetsToIgnoreCollisions.Contains(p) == false) {
-            //do not ignore or add to list if planet is already present in list
-            disableCollisionWithPlanet(p);
-            planetsToIgnoreCollisions.Add(p);
-            p.startIgnoreTimer();
-        }
-    }
-
-    void countDownIgnoredPlanetTimers() {
-        //reduces the timer on ignored planets
-        foreach (Planet p in planetsToIgnoreCollisions) { p.countDownIgnoreTimer();    }
-    }
-
-    void stopIgnoringTimedOutCollisions() {
-        //removes planets and times from the ignore collision lists if their timers are down to 0
-        //if the player is inside a planet, the planet/timer combo is not removed
-
-        List<Planet> planetsToRemove = new List<Planet>();
-        foreach (Planet p in planetsToIgnoreCollisions) {
-            if (p.hasIgnoreTimerFinished()) {
-                p.clearIgnoreTimer();
-                planetsToRemove.Add(p);
-            }
-        }
-        foreach (Planet p in planetsToRemove) { removePlanetFromIgnoreList(p);   }
-        planetsToRemove = new List<Planet>();
-    }
-
-    void disableCollisionWithPlanet(Planet p) {
-        //Collider2D playerCollider = GetComponent<BoxCollider2D>();
-        Collider2D playerCollider = GetComponent<CircleCollider2D>();
-        Collider2D planetCollider = p.GetComponent<CircleCollider2D>();
-        Physics2D.IgnoreCollision(playerCollider, planetCollider, true);
-    }
-
-    void enableCollisionWithPlanet(Planet p) {
-        //Collider2D playerCollider = GetComponent<BoxCollider2D>();
-        Collider2D playerCollider = GetComponent<CircleCollider2D>();
-        Collider2D planetCollider = p.GetComponent<CircleCollider2D>();
-        Physics2D.IgnoreCollision(playerCollider, planetCollider, false);
-    }
-
-    void removePlanetFromIgnoreList(Planet p) {
-        //Planet p can once again be collided with
-        if (planetsToIgnoreCollisions.Contains(p)) {
-            enableCollisionWithPlanet(p);
-            planetsToIgnoreCollisions.Remove(p);
-        }
-    }
-
-    void renewPlanetIgnoreTimersIfApplicable() {
-        //if the player is inside one of the collision-ignored planets, reset its countdown timer to the max
-        foreach (Planet p in planetsToIgnoreCollisions) {
-            if (playerIsInsidePlanet(p)) { p.renewIgnoreTimer();      }
-        }
     }
 }
