@@ -111,7 +111,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoRotationSpeed: 1
-  ignoreCollisionDuration: 2
+  coefficientOfFriction: 1
+  thingsOnSurface: []
 --- !u!50 &2238959681720501212
 Rigidbody2D:
   serializedVersion: 4

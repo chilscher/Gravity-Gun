@@ -36,6 +36,10 @@ public class Player : MonoBehaviour{
     private float staticGravity = 0.2f;
     public float gravitationalConstant = 1f;
 
+    //keycode inputs
+    private KeyCode leftKey = KeyCode.A;
+    private KeyCode rightKey = KeyCode.D;
+
     void Start(){
     }
     
@@ -52,6 +56,7 @@ public class Player : MonoBehaviour{
         calculateNetAcceleration();
         acceleratePlayer();
         movePlayer();
+        stopMovingIfSlowOnPlanet();
         rotatePlayerTowardsPlanet();
         
         rotateVelocityToHorizontal();
@@ -71,7 +76,7 @@ public class Player : MonoBehaviour{
     void calculateIsWalking() {
         isWalking = false;
         if (canWalk) { //and key is being pressed
-            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.A)) {
+            if (Input.GetKey(rightKey) || Input.GetKey(leftKey)) {
                 isWalking = true;
             }
         }
@@ -79,8 +84,8 @@ public class Player : MonoBehaviour{
 
     void setWalkingDirection() {
         if (isWalking) {
-            if (Input.GetKey(KeyCode.D)) { walkingDirection = rightDirection;     }
-            if (Input.GetKey(KeyCode.A)) { walkingDirection = leftDirection;      }
+            if (Input.GetKey(rightKey)) { walkingDirection = rightDirection;     }
+            if (Input.GetKey(leftKey)) { walkingDirection = leftDirection;      }
         }
         else { walkingDirection = Vector2.zero; }
 
@@ -101,7 +106,7 @@ public class Player : MonoBehaviour{
         float normalMagnitude = gravityMagnitude;
         if (isOnPlanet == false) { normalMagnitude = 0f;       }
 
-        float frictionMagnitude = normalMagnitude * coefficientOfFriction;
+        float frictionMagnitude = normalMagnitude * coefficientOfFriction * 0.5f; //0.5f is there to make it take longer to slow down on a planet. Emphasizes low friction
         //frictionMagnitude = 0f;
         Vector2 frictionDirection = velocity.normalized * -1;
 
@@ -139,7 +144,7 @@ public class Player : MonoBehaviour{
         Vector2 frictionVector = frictionMagnitude * frictionDirection;
         Vector2 walkingVector = walkingMagnitude * walkDir;
 
-        //scale down normal force to town down jitters, but not enough to make the player fly off -- scale down more on high-friction planets
+        //scale down normal force to tone down jitters, but not enough to make the player fly off -- scale down more on high-friction planets
         //dont scale down at all at low speeds
         if (isOnPlanet) {
             if (velocity.magnitude > planet.coefficientOfFriction) {
@@ -182,7 +187,7 @@ public class Player : MonoBehaviour{
         pos += changeInPosition;
         transform.position = pos;
 
-        print(velocity.magnitude);
+        //print(velocity.magnitude);
         
     }
 
@@ -246,6 +251,15 @@ public class Player : MonoBehaviour{
             velocity = newVelocity;
         }
 
+    }
+
+    void stopMovingIfSlowOnPlanet() {
+        //if the player is walking on a planet and going slow enough, stop then
+        //"slow enough" is below a predetermined threshold and less than the planet's coefficient of friction
+        if ((isOnPlanet) && (isWalking  == false) && (velocity.magnitude < planet.coefficientOfFriction) && (velocity.magnitude < 0.2f)){
+            velocity = Vector2.zero;
+        }
+        
     }
 
 
