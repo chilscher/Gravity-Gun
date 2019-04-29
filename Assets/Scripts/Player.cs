@@ -297,6 +297,12 @@ public class Player : MonoBehaviour{
         Collider2D planetCollider = planet.GetComponent<CircleCollider2D>();
         isOnPlanet = (playerCollider.IsTouching(planetCollider));
         
+        if (isOnPlanet) {
+            transform.parent = planet.transform;
+        }
+        else {
+            transform.parent = null;
+        }
     }
     
     float getDistanceToPlanetSurface() {

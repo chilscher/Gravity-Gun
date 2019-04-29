@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour{
 
-    public float slowTimeSpeed = 0.5f;
+    public float slowTimeSpeed = 0.3f;
     private KeyCode slowTimeKey = KeyCode.Space;
 
     void Start(){
