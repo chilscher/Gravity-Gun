@@ -11,6 +11,7 @@ public class Player : MonoBehaviour{
     private Vector2 playerTop;
     private Vector2 playerRight;
     private Vector2 playerLeft;
+    private float stopMovingThreshold = 0.2f; //if the player is below this speed on a planet while not walking, their velocity drops to 0
     
     //walking attributes
     public float maxWalkingSpeed = 2f; //1 means the player walks 1xRadius per second --uses circlecollider2d
@@ -26,6 +27,7 @@ public class Player : MonoBehaviour{
     public Planet planet;
     private bool isOnPlanet = false;
     private float distanceToPlanetSurface;
+    private float timeSpentOnPlanet;
     private Vector2 downDirection; //a unit vector in the direction of down, towards the planet
     private Vector2 leftDirection; // a unit vector tangential to the planet's surface, going counterclockwise
     private Vector2 rightDirection; //a unit vector tangenial to the planet's surface, going clockwise
@@ -47,6 +49,7 @@ public class Player : MonoBehaviour{
         
         calculateDirections();
         calculateIsOnPlanet();
+        setTimeSpentOnPlanet();
         removeDownSpeedIfOnPlanet();
 
         calculateCanWalk();
@@ -59,8 +62,7 @@ public class Player : MonoBehaviour{
         stopMovingIfSlowOnPlanet();
         rotatePlayerTowardsPlanet();
         
-        rotateVelocityToHorizontal();
-
+        printStatuses();
     }
 
     public void OnCollisionEnter2D(Collision2D collision) {
@@ -76,9 +78,7 @@ public class Player : MonoBehaviour{
     void calculateIsWalking() {
         isWalking = false;
         if (canWalk) { //and key is being pressed
-            if (Input.GetKey(rightKey) || Input.GetKey(leftKey)) {
-                isWalking = true;
-            }
+            if (Input.GetKey(rightKey) || Input.GetKey(leftKey)) {isWalking = true;}
         }
     }
 
@@ -128,6 +128,12 @@ public class Player : MonoBehaviour{
                     //print("going too fast");
                 }
             }
+            /*
+            else if (velocity.normalized == -walkDir) {
+                //if your walking opposes your direction of motion, you accelerate like normal
+                walkingMagnitude =
+            }
+            */
         }
 
         if (walkingMagnitude > 0) {
@@ -177,18 +183,13 @@ public class Player : MonoBehaviour{
     }
 
     void movePlayer(){
-        //moves the player in the direction of their velocity, unless their chosen planet is in the way
-        //should this change so it stops the player if ANY planet is in the way?
-
+        //moves the player according to their current velocity
         Vector2 changeInPosition = velocity * Time.deltaTime;
         float changeDistance = changeInPosition.magnitude;
         float distanceToPlanetSurface = getDistanceToPlanetSurface();
         Vector2 pos = transform.position;
         pos += changeInPosition;
         transform.position = pos;
-
-        //print(velocity.magnitude);
-        
     }
 
     
@@ -198,33 +199,29 @@ public class Player : MonoBehaviour{
         bool midSpeed = false;
         bool highSpeed = false;
         bool lowAngle = false;
-        //bool midAngle = false;
-        //bool highAngle = false;
 
         if (velocity.magnitude <= (maxWalkingSpeed * 1.1)) { lowSpeed = true;       }
         else if (velocity.magnitude <= (maxWalkingSpeed * 3)){ midSpeed = true;     }
         else { highSpeed = true;     }
 
         float downAngle = Vector2.Angle(playerBottom, downDirection); //angle in degrees
-        if (downAngle < 10) { lowAngle = true;    }
+        if (downAngle < 1) { lowAngle = true;    }
 
         Vector2 direction = downDirection;
         float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
         Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.forward);
-        if (isOnPlanet && lowSpeed && lowAngle) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);  }
-        else if (isOnPlanet && lowSpeed) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 0.05f);     }
-        if (isOnPlanet && midSpeed && lowAngle) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);  }
-        else if (isOnPlanet && midSpeed) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 0.06f);     }
-        if (isOnPlanet && highSpeed && lowAngle) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1); }
-        else if (isOnPlanet && highSpeed) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, .07f);     }
-        else { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, rotationSpeed * Time.deltaTime);        }
+        if (timeSpentOnPlanet > 2f) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Mathf.Min(1, (0.07f * timeSpentOnPlanet))); }
+        else if (isOnPlanet && lowAngle) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1f); }
+        else if (isOnPlanet && lowSpeed) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 0.05f);}
+        else if (isOnPlanet && midSpeed) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 0.06f);}
+        else if (isOnPlanet && highSpeed) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, .07f);}
+        else { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, rotationSpeed * Time.deltaTime);}
     }
     
 
     public void clickedPlanet(Planet p) {
         //if p is an applicable planet, set it to be the player's down planet
-        if (playerIsInsidePlanet(p) == false) { changePlanet(p);     }
-        else { print("You can't select this planet, because you are inside of it!");    }
+        changePlanet(p);
     }
 
     void changePlanet(Planet newPlanet) {
@@ -239,25 +236,17 @@ public class Player : MonoBehaviour{
         Vector2 flattenedVelocity = velocity - downProjection; //amount of veloicty in the horizontal direction
         return flattenedVelocity;
 
-    }
-
-    void rotateVelocityToHorizontal() {
-        //rotates the player's velocity vector so it is perpendicular to their down direction
-        if (isOnPlanet) {
-            Vector2 horizontalVelocity = getHorizontalVelocity();
-            float mag = velocity.magnitude;
-            Vector2 hNormal = horizontalVelocity.normalized;
-            Vector2 newVelocity = hNormal * (mag);
-            velocity = newVelocity;
-        }
-
-    }
+    }    
 
     void stopMovingIfSlowOnPlanet() {
-        //if the player is walking on a planet and going slow enough, stop then
+        //if the player is on a planet and going slow enough
+        //and they are EITHER not walking OR walking in the opposite direction of thier motion
+        //then stop them
         //"slow enough" is below a predetermined threshold and less than the planet's coefficient of friction
-        if ((isOnPlanet) && (isWalking  == false) && (velocity.magnitude < planet.coefficientOfFriction) && (velocity.magnitude < 0.2f)){
-            velocity = Vector2.zero;
+        if ((isOnPlanet) && ((velocity.magnitude < planet.coefficientOfFriction) || (velocity.magnitude < stopMovingThreshold))){
+            if ((!isWalking) || (isWalking && velocity.normalized == -walkingDirection)){
+                velocity = Vector2.zero;
+            }
         }
         
     }
@@ -321,24 +310,13 @@ public class Player : MonoBehaviour{
         float distanceToCenter = vectorToCenter.magnitude;
         return distanceToCenter;
     }
+    void setTimeSpentOnPlanet() {
+        if (isOnPlanet) {timeSpentOnPlanet += Time.deltaTime;}
+        else {timeSpentOnPlanet = 0f;}
+    }
 
-    bool playerIsInsidePlanet(Planet p) {
-        //the player is inside the planet if any of their vertices are inside the planet's radius or if they intersect with the planet's surface
-        Collider2D playerCollider = GetComponent<CircleCollider2D>();
-        CircleCollider2D planetCollider = p.GetComponent<CircleCollider2D>();
-        bool isOnSurface = (playerCollider.IsTouching(planetCollider));
-        if (isOnSurface) {  return true;     }
-
-        //see if player's edges are inside the planet's radius
-        Vector2 planetCenter = p.transform.position;
-        float colliderRadius = planetCollider.radius;
-        float planetScale = p.transform.lossyScale.x; //asumes a uniform scaling
-        float planetRadius = colliderRadius * planetScale;
-        Vector2 playerCenter = transform.position;
-        float d = Vector2.Distance(playerCenter, planetCenter);
-        bool isInCenter = Vector2.Distance(playerCenter, planetCenter) < planetRadius;
-        if (isInCenter) { return true;      }
-
-        return false;
+    void printStatuses() {
+        //print(isWalking);
+        //print(velocity.magnitude);
     }
 }
