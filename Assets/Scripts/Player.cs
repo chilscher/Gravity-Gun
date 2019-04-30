@@ -42,6 +42,9 @@ public class Player : MonoBehaviour{
     private KeyCode leftKey = KeyCode.A;
     private KeyCode rightKey = KeyCode.D;
 
+    //checkpoint attributes
+    public GameObject lastCheckpoint = null;
+
     void Start(){
     }
     
@@ -210,7 +213,7 @@ public class Player : MonoBehaviour{
         Vector2 direction = downDirection;
         float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
         Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.forward);
-        if (timeSpentOnPlanet > 2f) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Mathf.Min(1, (0.07f * timeSpentOnPlanet))); }
+        if (timeSpentOnPlanet > 2f) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Mathf.Min(1, (0.035f * timeSpentOnPlanet))); }
         else if (isOnPlanet && lowAngle) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1f); }
         else if (isOnPlanet && lowSpeed) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 0.05f);}
         else if (isOnPlanet && midSpeed) { transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 0.06f);}
@@ -249,6 +252,18 @@ public class Player : MonoBehaviour{
             }
         }
         
+    }
+
+
+    private void OnTriggerEnter2D(Collider2D other) {
+        if (other.gameObject.CompareTag("Checkpoint")) {
+            hitCheckpoint(other.gameObject);
+        }
+    }
+
+    void hitCheckpoint(GameObject checkpoint) {
+        lastCheckpoint = checkpoint;
+        //print("hit checkpoint!");
     }
 
 
