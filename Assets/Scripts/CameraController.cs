@@ -9,8 +9,15 @@ public class CameraController : MonoBehaviour{
     private float fullTimeSpeed = 1f;
     private KeyCode slowTimeKey = KeyCode.Space;
     private KeyCode pauseKey = KeyCode.Escape;
+    public Player player;
 
-    void Start(){
+    public GameObject returnToCheckpointButton;
+    private List<GameObject> pauseMenuObjects = new List<GameObject>(); //all game objects only shown on the pause menu
+
+
+    void Start() {
+        pauseMenuObjects.Add(returnToCheckpointButton);
+        hidePauseMenu();
     }
     
     void Update(){
@@ -29,11 +36,15 @@ public class CameraController : MonoBehaviour{
         }
     }
 
+    //functions for setting the play, paused, and slowmo states
     private bool isPaused() {return Time.timeScale == pauseTimeSpeed;}
     private bool isSlowed() {return Time.timeScale == slowTimeSpeed;}
     private bool isFullSpeed() {return Time.timeScale == fullTimeSpeed;}
     private void enterSlowMode() {Time.timeScale = slowTimeSpeed;}
-    private void enterPauseMode() { Time.timeScale = pauseTimeSpeed;}
+    private void enterPauseMode() {
+        Time.timeScale = pauseTimeSpeed;
+        showPauseMenu();
+    }
     private void enterNormalMode() { Time.timeScale = fullTimeSpeed;}
 
     private void exitPauseMode() {
@@ -41,5 +52,27 @@ public class CameraController : MonoBehaviour{
         //if not, go to full speed
         if (Input.GetKey(slowTimeKey)) {enterSlowMode();}
         else {enterNormalMode();}
+        hidePauseMenu();
+    }
+
+    private void showPauseMenu() {
+        for (int i = 0; i < pauseMenuObjects.Count; i++) {
+            pauseMenuObjects[i].SetActive(true);
+        }
+    }
+
+    private void hidePauseMenu() {
+        for (int i = 0; i < pauseMenuObjects.Count; i++) {
+            pauseMenuObjects[i].SetActive(false);
+        }
+    }
+
+
+
+
+    //functions for interacting with UI elements
+    public void clickedCheckpointButton() {
+        bool success = player.returnToLastCheckpoint();
+        if (success) { exitPauseMode(); }
     }
 }

@@ -131,12 +131,6 @@ public class Player : MonoBehaviour{
                     //print("going too fast");
                 }
             }
-            /*
-            else if (velocity.normalized == -walkDir) {
-                //if your walking opposes your direction of motion, you accelerate like normal
-                walkingMagnitude =
-            }
-            */
         }
 
         if (walkingMagnitude > 0) {
@@ -264,6 +258,29 @@ public class Player : MonoBehaviour{
     void hitCheckpoint(GameObject checkpoint) {
         lastCheckpoint = checkpoint;
         //print("hit checkpoint!");
+    }
+
+    public bool returnToLastCheckpoint() {
+        //returns the player to their last checkpoint. returns the action's success or failure as a bool
+        if (lastCheckpoint != null) {
+            Vector2 checkpointPos = lastCheckpoint.transform.position;
+            transform.position = checkpointPos; //move to the checkpoint
+            velocity = Vector2.zero; //stop moving
+            if (lastCheckpoint.transform.parent != null) {
+                Planet newPlanet = lastCheckpoint.transform.parent.GetComponent<Planet>();
+                planet = newPlanet; //set planet to be the one the checkpoint is on
+
+                calculateDown();
+                Vector2 direction = downDirection;
+                float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
+                Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.forward);//rotate so the new planet is down
+                transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1f);
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
 
