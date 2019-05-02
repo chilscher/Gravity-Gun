@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class CameraController : MonoBehaviour{
 
@@ -11,12 +12,11 @@ public class CameraController : MonoBehaviour{
     private KeyCode pauseKey = KeyCode.Escape;
     public Player player;
 
-    public GameObject returnToCheckpointButton;
-    private List<GameObject> pauseMenuObjects = new List<GameObject>(); //all game objects only shown on the pause menu
+    public GameObject pauseMenuCanvas;
 
 
     void Start() {
-        pauseMenuObjects.Add(returnToCheckpointButton);
+        //pauseMenuObjects.Add(returnToCheckpointButton);
         hidePauseMenu();
     }
     
@@ -56,23 +56,34 @@ public class CameraController : MonoBehaviour{
     }
 
     private void showPauseMenu() {
-        for (int i = 0; i < pauseMenuObjects.Count; i++) {
-            pauseMenuObjects[i].SetActive(true);
-        }
+        pauseMenuCanvas.SetActive(true);
     }
 
     private void hidePauseMenu() {
-        for (int i = 0; i < pauseMenuObjects.Count; i++) {
-            pauseMenuObjects[i].SetActive(false);
-        }
+        pauseMenuCanvas.SetActive(false);
     }
 
 
 
 
     //functions for interacting with UI elements
+
+    public void clickedContinueButton() {
+        exitPauseMode();
+    }
+
     public void clickedCheckpointButton() {
         bool success = player.returnToLastCheckpoint();
         if (success) { exitPauseMode(); }
+    }
+
+    public void clickedRestartButton() {
+        exitPauseMode();
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    public void clickedQuitButton() {
+        exitPauseMode();
+        Application.Quit();
     }
 }
