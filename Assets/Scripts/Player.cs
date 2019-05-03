@@ -292,12 +292,12 @@ public class Player : MonoBehaviour{
 
 
     void calculateDirections() {
-        calculateDown();
         calculateUp();
+        calculateDown();
         calculateRight();
         calculateLeft();
-        calculatePlayerUp();
         calculatePlayerDown();
+        calculatePlayerUp();
         calculatePlayerRight();
         calculatePlayerLeft();
     }
