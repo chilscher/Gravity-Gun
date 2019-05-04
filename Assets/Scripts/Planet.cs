@@ -59,7 +59,6 @@ public class Planet : MonoBehaviour{
             Vector2 vectorToMoveBackTowardsPlanet = radialDifference * towardsPlanet;
             Vector2 movedPosMaintainRadius = movedPos + vectorToMoveBackTowardsPlanet;
             transform.position = movedPosMaintainRadius;
-
         }
     }
     

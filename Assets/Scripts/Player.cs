@@ -43,7 +43,7 @@ public class Player : MonoBehaviour{
     private KeyCode rightKey = KeyCode.D;
 
     //checkpoint attributes
-    public GameObject lastCheckpoint = null;
+    public Checkpoint lastCheckpoint = null;
 
     void Start(){
     }
@@ -251,13 +251,23 @@ public class Player : MonoBehaviour{
 
     private void OnTriggerEnter2D(Collider2D other) {
         if (other.gameObject.CompareTag("Checkpoint")) {
-            hitCheckpoint(other.gameObject);
+            hitCheckpoint(other.GetComponent<Checkpoint>());
         }
     }
 
-    void hitCheckpoint(GameObject checkpoint) {
+    private void OnTriggerExit2D(Collider2D other) {
+       if (other.gameObject.CompareTag("Checkpoint")) {
+            leftCheckpoint(other.GetComponent<Checkpoint>());
+        }
+    }
+
+    private void hitCheckpoint(Checkpoint checkpoint) {
         lastCheckpoint = checkpoint;
-        //print("hit checkpoint!");
+        checkpoint.entered();
+    }
+
+    private void leftCheckpoint(Checkpoint checkpoint) {
+        checkpoint.exited();
     }
 
     public bool returnToLastCheckpoint() {
