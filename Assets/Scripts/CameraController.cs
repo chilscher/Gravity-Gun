@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class CameraController : MonoBehaviour{
-
+    /*
     public float slowTimeSpeed = 0.3f;
     private float pauseTimeSpeed = 0f;
     private float fullTimeSpeed = 1f;
@@ -86,4 +86,5 @@ public class CameraController : MonoBehaviour{
         exitPauseMode();
         Application.Quit();
     }
+    */
 }

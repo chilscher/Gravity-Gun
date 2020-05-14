@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Background : MonoBehaviour{
-
+    /*
     private Camera mainCamera;
     private Vector2 prevCameraPosition; // camera position at the last frame
     public float parallax = .1f; //the background texture scrolling is scaled down by this amount
@@ -41,4 +41,5 @@ public class Background : MonoBehaviour{
         mat.mainTextureOffset = offset;
 
     }
+    */
 }

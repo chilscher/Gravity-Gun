@@ -3,7 +3,83 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour{
-    
+
+    public Planet planet;
+    public bool walking = false;
+    public bool walking_clockwise = false;
+
+    private KeyCode leftKey = KeyCode.A;
+    private KeyCode rightKey = KeyCode.D;
+
+
+    private void Start() {
+        
+    }
+
+    private void Update() {
+
+        if (Input.GetKey(rightKey)) {
+            walking = true;
+            walking_clockwise = true;
+        }
+        if (Input.GetKey(leftKey)) {
+            walking = true;
+            walking_clockwise = false;
+        }
+        if ((Input.GetKey(rightKey) && Input.GetKey(leftKey)) || ((!Input.GetKey(rightKey)) && (!Input.GetKey(leftKey)))) {
+            walking = false;
+        }
+        if (walking) {
+            moveAroundPlanet(walking_clockwise, 0.1f);
+        }
+        rotatePlayerTowardsPlanet();
+    }
+
+    void move(float add_x, float add_y) {
+        float x = transform.position.x;
+        float y = transform.position.y;
+        x += add_x;
+        y += add_y;
+        Vector2 newPos = new Vector2(x, y);
+        transform.position = newPos;
+    }
+
+    void moveAroundPlanet(bool clockwise, float distance) {
+        float planet_center_x = planet.transform.position.x + (planet.GetComponent<CircleCollider2D>().offset.x * planet.transform.localScale.x);
+        float planet_center_y = planet.transform.position.y + (planet.GetComponent<CircleCollider2D>().offset.y * planet.transform.localScale.y);
+        float x = transform.position.x - planet_center_x;
+        float y = transform.position.y - planet_center_y;
+        float r = (planet.GetComponent<CircleCollider2D>().radius * planet.transform.localScale.x) + GetComponent<CircleCollider2D>().radius;
+        float s = distance;
+        if (clockwise) {
+            s *= -1;
+        }
+        float theta = (s / r) + Mathf.Atan(y / x);
+        if (x < 0) {
+            theta += Mathf.PI;
+        }
+        float x2 = r * Mathf.Cos(theta);
+        float y2 = r * Mathf.Sin(theta);
+        float del_x = (x2 - x);
+        float del_y = (y2 - y);
+        move(del_x, del_y);
+        
+    }
+
+
+    void rotatePlayerTowardsPlanet() {
+        //rotates the player (and its child object the main camera) towards the planet
+
+        Vector2 playerBottom = transform.up * -1;
+        Vector2 downDirection = (planet.transform.position - transform.position).normalized;
+        float downAngle = Vector2.Angle(playerBottom, downDirection); //angle in degrees
+
+        Vector2 direction = downDirection;
+        float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
+        Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
+    }
+    /*
     //player attributes
     public Vector2 velocity;
     private Vector2 netAcceleration;
@@ -361,4 +437,5 @@ public class Player : MonoBehaviour{
         //print(isWalking);
         //print(velocity.magnitude);
     }
+    */
 }
