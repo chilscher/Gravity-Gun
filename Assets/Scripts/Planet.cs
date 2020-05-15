@@ -3,6 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Planet : MonoBehaviour{
+    public Vector2 centerPoint;
+    public float coefficientOfFriction = 0.6f; //0 is no friction, 1 is equal to normal force
+                                               //an ice planet may have 0.2, a normal planet may have 0.6, and a planet with super-friction may have 1
+                                               //what would a glue planet have???
+    
+    private void OnMouseDown() {
+        GameObject.Find("Player").GetComponent<Player>().clickedPlanet(this);
+    }
+
+    private void Start() {
+        centerPoint = GetComponent<CircleCollider2D>().bounds.center;
+    }
     /*
     private Player player;
     public float rotationSpeed = 1f; //the speed that the planet rotates around its own center
@@ -73,5 +85,5 @@ public class Planet : MonoBehaviour{
     
     }
     */
-    
+
 }

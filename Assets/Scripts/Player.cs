@@ -1,38 +1,100 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Player : MonoBehaviour{
 
     public Planet planet;
-    public bool walking = false;
-    public bool walking_clockwise = false;
+    private bool walking = false;
+    private float walkingClockwiseScalar = 1f; //1 is clockwise, -1 is counterclockwise
+    public float maxWalkingSpeed = 1f;
+    private float maxWalkingSpeedOnPlanet = 1f; //affected by the planet you are on!
+    public float walkingAcceleration = 1f;
+    private float currentSpeed = 0f;
+    public float gravitationalConstant = 1f;
+    private bool isOnPlanet = true;
 
     private KeyCode leftKey = KeyCode.A;
     private KeyCode rightKey = KeyCode.D;
 
-
+    public GameObject joystick;
+    
+    private Vector2 freeFallDirection;
+    private float freeFallSpeed;
+    
+    bool stop = false;
+    
     private void Start() {
         
     }
 
     private void Update() {
+        if (isOnPlanet) {
+            calculateIsWalking();
+            setWalkingDirection();
+            setMaxWalkingSpeed();
+            accelerateFromWalk();
+            accelerateFromFriction();
+            moveAroundPlanet(currentSpeed * Time.deltaTime);
+            rotatePlayerTowardsPlanet();
+            //print("on planet: " + currentSpeed);
+        }
+        else {
+            if (!stop) {
 
-        if (Input.GetKey(rightKey)) {
-            walking = true;
-            walking_clockwise = true;
+                fallTowardsPlanet();
+                moveTowardsPlanet();
+            }
+
         }
-        if (Input.GetKey(leftKey)) {
-            walking = true;
-            walking_clockwise = false;
-        }
-        if ((Input.GetKey(rightKey) && Input.GetKey(leftKey)) || ((!Input.GetKey(rightKey)) && (!Input.GetKey(leftKey)))) {
-            walking = false;
-        }
+    }
+    void setMaxWalkingSpeed() {
+        maxWalkingSpeedOnPlanet = maxWalkingSpeed / planet.coefficientOfFriction;
+    }
+
+    void accelerateFromWalk() {
         if (walking) {
-            moveAroundPlanet(walking_clockwise, 0.1f);
+            float speedAddition = planet.coefficientOfFriction * planet.coefficientOfFriction * walkingClockwiseScalar * (walkingAcceleration * Time.deltaTime);
+            if (joystick.GetComponent<FixedJoystick>().Horizontal != 0) { //if you are using the joystick to move, the amount you accelerate by scales with how far you move the joystick
+                float joystickScale = Mathf.Abs(joystick.GetComponent<FixedJoystick>().Horizontal);
+                joystickScale *= 1.3f; //makes the max speed attainable even if you don't move your thumb 100% to either side
+                if (joystickScale > 1) { joystickScale = 1f; }
+                //print(joystickScale);
+                speedAddition *= joystickScale;
+            }
+            currentSpeed += speedAddition;
+            if (currentSpeed >= maxWalkingSpeedOnPlanet) { currentSpeed = maxWalkingSpeedOnPlanet; }
+            if (currentSpeed <= -maxWalkingSpeedOnPlanet) { currentSpeed = -maxWalkingSpeedOnPlanet; }
         }
-        rotatePlayerTowardsPlanet();
+    }
+
+    void accelerateFromFriction() {
+        if (!walking || (walking && currentSpeed * walkingClockwiseScalar < 0)) {
+            float G = gravitationalConstant;
+            float M = planet.GetComponent<Rigidbody2D>().mass;
+            float d = planet.GetComponent<CircleCollider2D>().radius;
+            float ag = (G * M) / (d * d);
+            float coefficientOfFriction = planet.coefficientOfFriction;
+
+            float gravityMagnitude = ag;
+
+            float frictionMagnitude = gravityMagnitude * coefficientOfFriction;
+            frictionMagnitude = planet.coefficientOfFriction * planet.coefficientOfFriction * (walkingAcceleration);
+
+            if (currentSpeed > 0) {
+                currentSpeed -= frictionMagnitude * Time.deltaTime;
+                if (currentSpeed < 0) {
+                    currentSpeed = 0;
+                }
+            }
+            if (currentSpeed < 0) {
+                currentSpeed += frictionMagnitude * Time.deltaTime;
+                if (currentSpeed > 0) {
+                    currentSpeed = 0;
+                }
+            }
+        }
     }
 
     void move(float add_x, float add_y) {
@@ -42,18 +104,19 @@ public class Player : MonoBehaviour{
         y += add_y;
         Vector2 newPos = new Vector2(x, y);
         transform.position = newPos;
+        //print("Distance moved: " + Mathf.Sqrt(x * x + y * y) + "... Instantaneous Speed: " + currentSpeed * Time.deltaTime);
     }
 
-    void moveAroundPlanet(bool clockwise, float distance) {
-        float planet_center_x = planet.transform.position.x + (planet.GetComponent<CircleCollider2D>().offset.x * planet.transform.localScale.x);
-        float planet_center_y = planet.transform.position.y + (planet.GetComponent<CircleCollider2D>().offset.y * planet.transform.localScale.y);
+    void moveAroundPlanet(float distance) {
+        //assumes motion clockwise. for motion counterclockwise, use a negative distance
+        //float planet_center_x = planet.transform.position.x + (planet.GetComponent<CircleCollider2D>().offset.x * planet.transform.localScale.x);
+        //float planet_center_y = planet.transform.position.y + (planet.GetComponent<CircleCollider2D>().offset.y * planet.transform.localScale.y);
+        float planet_center_x = planet.centerPoint.x;
+        float planet_center_y = planet.centerPoint.y;
         float x = transform.position.x - planet_center_x;
         float y = transform.position.y - planet_center_y;
         float r = (planet.GetComponent<CircleCollider2D>().radius * planet.transform.localScale.x) + GetComponent<CircleCollider2D>().radius;
-        float s = distance;
-        if (clockwise) {
-            s *= -1;
-        }
+        float s = distance * -1;
         float theta = (s / r) + Mathf.Atan(y / x);
         if (x < 0) {
             theta += Mathf.PI;
@@ -63,6 +126,7 @@ public class Player : MonoBehaviour{
         float del_x = (x2 - x);
         float del_y = (y2 - y);
         move(del_x, del_y);
+        //print("Distance: " + distance + "... Speed: " + currentSpeed * Time.deltaTime);
         
     }
 
@@ -71,13 +135,111 @@ public class Player : MonoBehaviour{
         //rotates the player (and its child object the main camera) towards the planet
 
         Vector2 playerBottom = transform.up * -1;
-        Vector2 downDirection = (planet.transform.position - transform.position).normalized;
+        Vector2 downDirection = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
         float downAngle = Vector2.Angle(playerBottom, downDirection); //angle in degrees
 
         Vector2 direction = downDirection;
         float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
         Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.forward);
         transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
+    }
+
+
+
+
+
+
+
+    
+    public void clickedPlanet(Planet p) {
+        if (p!= planet) {
+            //print(currentSpeed);
+            planet = p;
+            isOnPlanet = false;
+            freeFallSpeed = Mathf.Abs(currentSpeed);
+            if (currentSpeed != 0) {
+                freeFallDirection = Vector2.Perpendicular(transform.up * -1).normalized;
+                if (walkingClockwiseScalar != 1f) {
+                    freeFallDirection *= -1;
+                }
+            }
+            //GetComponent<CircleCollider2D>().enabled = true;
+            //print(freeFallSpeed);
+            //print(freeFallDirection);
+            //print(currentSpeed);
+        }
+    }
+    void fallTowardsPlanet() {
+        //net acceleration = gravity + normal + friction
+        //print(freeFallSpeed);
+        float G = gravitationalConstant;
+        float M = planet.GetComponent<Rigidbody2D>().mass;
+        float d = getDistanceToPlanetCenter();
+        float ag = (G * M) / (d * d);
+
+        float gravityMagnitude = ag;
+        Vector2 downDirection = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
+        Vector2 gravityVector = gravityMagnitude * downDirection;
+        freeFallDirection = (freeFallDirection * freeFallSpeed + gravityVector).normalized;
+        freeFallSpeed = (freeFallDirection * freeFallSpeed + gravityVector).magnitude;
+        
+    }
+
+    float getDistanceToPlanetCenter() {
+        float distance_x = transform.position.x - planet.centerPoint.x;
+        float distance_y = transform.position.y - planet.centerPoint.y;
+        //print(distance_x);
+        //print(distance_y);
+        //find radial distance, then subtract player's circlecollider radius???
+        float distance = Mathf.Sqrt((distance_x * distance_x) + (distance_y * distance_y));
+        //print(distance);
+        return distance;
+        //return 0f;
+    }
+
+    void moveTowardsPlanet() {
+        float move_x = freeFallDirection.x * freeFallSpeed * Time.deltaTime;
+        float move_y = freeFallDirection.y * freeFallSpeed * Time.deltaTime;
+        move(move_x, move_y);
+        if (getDistanceToPlanetCenter() < (planet.GetComponent<CircleCollider2D>().radius * planet.transform.lossyScale.x)) {
+            touchPlanet();
+        }
+    }
+
+    void touchPlanet() {
+        isOnPlanet = true;
+        currentSpeed = 0f;
+        /*
+        Vector3 down = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
+        Vector3 proj = Vector3.Project(freeFallDirection, down);
+        Vector2 downProjection = proj; //amount of velocity that is in the down direction
+        Vector2 flattenedVelocity = (freeFallDirection * freeFallSpeed) - downProjection;
+        currentSpeed = flattenedVelocity.magnitude;
+        */
+        //print(freeFallSpeed);
+        //print(currentSpeed);
+        //currentSpeed = 0f;
+    }
+    
+
+    //----------BASIC MOVEMENT AND PLANET SELECTION FUNCTIONS---------------
+
+
+    void calculateIsWalking() {
+        walking = false;
+        if (Input.GetKey(rightKey) || Input.GetKey(leftKey)) { walking = true; }
+        if (Input.GetKey(rightKey) && Input.GetKey(leftKey)) { walking = false; }
+        if (joystick.GetComponent<FixedJoystick>().Horizontal != 0) { walking = true; }
+    }
+
+    void setWalkingDirection() {
+        if (walking) {
+            if (Input.GetKey(rightKey)) { walkingClockwiseScalar = 1f; }
+            if (Input.GetKey(leftKey)) { walkingClockwiseScalar = -1f; }
+            if (joystick.GetComponent<FixedJoystick>().Horizontal > 0) { walkingClockwiseScalar = 1f; }
+            if (joystick.GetComponent<FixedJoystick>().Horizontal < 0) { walkingClockwiseScalar = -1f; }
+        }
+
     }
     /*
     //player attributes
