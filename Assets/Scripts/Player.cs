@@ -12,8 +12,14 @@ public class Player : MonoBehaviour{
     private float maxWalkingSpeedOnPlanet = 1f; //affected by the planet you are on!
     public float walkingAcceleration = 1f;
     private float currentSpeed = 0f;
-    public float gravitationalConstant = 1f;
+    //public float gravitationalConstant = 1f;
     private bool isOnPlanet = true;
+    public float rotationRate = 60f; //degrees per second
+    public float fallingGravityConstant = 1f;
+    public float frictionGravityConstant = 1f;
+    private bool rotationStableOnPlanet = false;
+    private bool rotationStableInFall = false;
+    private bool rotateClockwiseInFall = false;
 
     private KeyCode leftKey = KeyCode.A;
     private KeyCode rightKey = KeyCode.D;
@@ -45,6 +51,7 @@ public class Player : MonoBehaviour{
 
                 fallTowardsPlanet();
                 moveTowardsPlanet();
+                rotatePlayerMidFall();
             }
 
         }
@@ -71,7 +78,7 @@ public class Player : MonoBehaviour{
 
     void accelerateFromFriction() {
         if (!walking || (walking && currentSpeed * walkingClockwiseScalar < 0)) {
-            float G = gravitationalConstant;
+            float G = frictionGravityConstant;
             float M = planet.GetComponent<Rigidbody2D>().mass;
             float d = planet.GetComponent<CircleCollider2D>().radius;
             float ag = (G * M) / (d * d);
@@ -140,17 +147,157 @@ public class Player : MonoBehaviour{
 
         Vector2 direction = downDirection;
         float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
+        /*
         Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.forward);
         transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
+        */
+        /*
+        float rotationMax = rotationRate * Time.deltaTime;
+        float r2 = 180 * Time.deltaTime;
+        float r3 = rotationMax / r2;
+        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, r3);
+        */
+        angle -= (transform.eulerAngles.z - 360f);
+        angle = angle - Mathf.CeilToInt(angle / 360f) * 360f;
+        if (angle < 0) {
+            angle += 360f;
+        }
+        float angleToRotate = angle;
+        //print("before trimming: " + angleToRotate);
+
+        bool rotateClockwise = false;
+        if (angleToRotate > 180) {
+            rotateClockwise = true;
+        }
+        if (rotationStableOnPlanet) {
+            float a = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
+            Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
+            transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
+        }
+        /*
+        float max = rotationRate * Time.deltaTime;
+        if (angleToRotate < max) {
+            print("made it");
+            float a = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
+            Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
+            transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
+        }
+        */
+        //else {
+        //print("nah");
+        else {
+
+            float clockwiseScalar = 1f;
+            if (rotateClockwise) {
+                angleToRotate -= 180;
+                clockwiseScalar = -1f;
+            }
+            if (angleToRotate > rotationRate * Time.deltaTime) {
+                angleToRotate = rotationRate * Time.deltaTime;
+                
+            }
+            else {
+                rotationStableOnPlanet = true;
+            }
+            transform.Rotate(0, 0, angleToRotate * clockwiseScalar);
+        }
+        //}
+        /*
+        if (!rotateClockwise) {
+
+            if (angleToRotate > rotationRate * Time.deltaTime) {
+                angleToRotate = rotationRate * Time.deltaTime;
+            }
+
+            transform.Rotate(0, 0, angleToRotate);
+        }
+        //print("after trimming: " + angleToRotate);
+        else {
+            angleToRotate -= 180;
+            if (angleToRotate > rotationRate * Time.deltaTime) {
+                angleToRotate = rotationRate * Time.deltaTime;
+            }
+
+            transform.Rotate(0, 0, -angleToRotate);
+        }
+        */
+    }
+
+    void rotatePlayerMidFall() {
+        //rotates the player (and its child object the main camera) towards the planet
+
+        Vector2 playerBottom = transform.up * -1;
+        Vector2 downDirection = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
+        float downAngle = Vector2.Angle(playerBottom, downDirection); //angle in degrees
+
+        Vector2 direction = downDirection;
+        float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
+
+        angle -= (transform.eulerAngles.z - 360f);
+        angle = angle - Mathf.CeilToInt(angle / 360f) * 360f;
+        if (angle < 0) {
+            angle += 360f;
+        }
+        float angleToRotate = angle;
+        //print("before trimming: " + angleToRotate);
+        /*
+        bool rotateClockwise = false;
+        if (angleToRotate > 180) {
+            rotateClockwise = true;
+        }
+        */
+        //print(angleToRotate);
+        bool rotateClockwise = rotateClockwiseInFall;
+        if (rotationStableInFall) {
+            float a = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
+            Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
+            transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
+        }
+        else {
+
+            float clockwiseScalar = 1f;
+            if (rotateClockwise && !rotationStableInFall) {
+                //angleToRotate -= 180;
+                clockwiseScalar = -1f;
+            }
+            if (angleToRotate > rotationRate * Time.deltaTime) {
+                angleToRotate = rotationRate * Time.deltaTime;
+
+            }
+            else {
+                //print("got it");
+                rotationStableInFall = true;
+            }
+            transform.Rotate(0, 0, angleToRotate * clockwiseScalar);
+        }
+    }
+
+
+    private void setFallRotation() {
+        Vector2 playerBottom = transform.up * -1;
+        Vector2 downDirection = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
+        float downAngle = Vector2.Angle(playerBottom, downDirection); //angle in degrees
+
+        Vector2 direction = downDirection;
+        float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
+        angle -= (transform.eulerAngles.z - 360f);
+        angle = angle - Mathf.CeilToInt(angle / 360f) * 360f;
+        if (angle < 0) {
+            angle += 360f;
+        }
+        float angleToRotate = angle;
+
+        bool rotateClockwise = false;
+        if (angleToRotate > 180) {
+            rotateClockwise = true;
+        }
+        rotateClockwiseInFall = rotateClockwise;
     }
 
 
 
 
 
-
-
-    
     public void clickedPlanet(Planet p) {
         if (p!= planet) {
             //print(currentSpeed);
@@ -163,6 +310,8 @@ public class Player : MonoBehaviour{
                     freeFallDirection *= -1;
                 }
             }
+            rotationStableInFall = false;
+            setFallRotation();
             //GetComponent<CircleCollider2D>().enabled = true;
             //print(freeFallSpeed);
             //print(freeFallDirection);
@@ -172,7 +321,7 @@ public class Player : MonoBehaviour{
     void fallTowardsPlanet() {
         //net acceleration = gravity + normal + friction
         //print(freeFallSpeed);
-        float G = gravitationalConstant;
+        float G = fallingGravityConstant;
         float M = planet.GetComponent<Rigidbody2D>().mass;
         float d = getDistanceToPlanetCenter();
         float ag = (G * M) / (d * d);
@@ -209,6 +358,8 @@ public class Player : MonoBehaviour{
     void touchPlanet() {
         isOnPlanet = true;
         currentSpeed = 0f;
+        rotationStableOnPlanet = false;
+        setSpeedOnPlanet();
         /*
         Vector3 down = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
         Vector3 proj = Vector3.Project(freeFallDirection, down);
@@ -221,6 +372,27 @@ public class Player : MonoBehaviour{
         //currentSpeed = 0f;
     }
     
+    void setSpeedOnPlanet() {
+        //print(freeFallSpeed);
+        Vector2 down = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
+        Vector2 side = Vector2.Perpendicular(down);
+        Vector3 s = side;
+        Vector3 v = freeFallDirection * freeFallSpeed;
+        Vector3 proj = Vector3.Project(v, s);
+        //print(freeFallDirection * freeFallSpeed);
+        //print(proj);
+        currentSpeed = proj.magnitude;
+        //print(currentSpeed);
+    }
+    /*
+    void setDirectionOnPlanet() {
+        Vector2 playerRight = transform.forward;
+        Vector3 pr = playerRight;
+        Vector3 v = freeFallDirection * freeFallSpeed;
+        Vector3 proj = Vector3.Project(v, pr);
+
+    }
+    */
 
     //----------BASIC MOVEMENT AND PLANET SELECTION FUNCTIONS---------------
 

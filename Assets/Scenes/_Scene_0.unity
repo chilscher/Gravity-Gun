@@ -3619,6 +3619,16 @@ PrefabInstance:
       propertyPath: currentSpeed
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4797380980953733942, guid: d69a208da7bff2841899411f00db1372,
+        type: 3}
+      propertyPath: rotationRate
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 4797380980953733942, guid: d69a208da7bff2841899411f00db1372,
+        type: 3}
+      propertyPath: fallingGravityConstant
+      value: 0.05
+      objectReference: {fileID: 0}
     - target: {fileID: 4797380980953733929, guid: d69a208da7bff2841899411f00db1372,
         type: 3}
       propertyPath: m_RootOrder
