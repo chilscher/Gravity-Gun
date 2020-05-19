@@ -9,6 +9,10 @@ public class Planet : MonoBehaviour{
                                                //what would a glue planet have???
     
     private void OnMouseDown() {
+        //GameObject.Find("Player").GetComponent<Player>().clickedPlanet(this);
+    }
+
+    public void clicked() {
         GameObject.Find("Player").GetComponent<Player>().clickedPlanet(this);
     }
 

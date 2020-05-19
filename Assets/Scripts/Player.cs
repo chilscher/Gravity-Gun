@@ -111,13 +111,10 @@ public class Player : MonoBehaviour{
         y += add_y;
         Vector2 newPos = new Vector2(x, y);
         transform.position = newPos;
-        //print("Distance moved: " + Mathf.Sqrt(x * x + y * y) + "... Instantaneous Speed: " + currentSpeed * Time.deltaTime);
     }
 
     void moveAroundPlanet(float distance) {
         //assumes motion clockwise. for motion counterclockwise, use a negative distance
-        //float planet_center_x = planet.transform.position.x + (planet.GetComponent<CircleCollider2D>().offset.x * planet.transform.localScale.x);
-        //float planet_center_y = planet.transform.position.y + (planet.GetComponent<CircleCollider2D>().offset.y * planet.transform.localScale.y);
         float planet_center_x = planet.centerPoint.x;
         float planet_center_y = planet.centerPoint.y;
         float x = transform.position.x - planet_center_x;
@@ -133,7 +130,6 @@ public class Player : MonoBehaviour{
         float del_x = (x2 - x);
         float del_y = (y2 - y);
         move(del_x, del_y);
-        //print("Distance: " + distance + "... Speed: " + currentSpeed * Time.deltaTime);
         
     }
 
@@ -147,23 +143,12 @@ public class Player : MonoBehaviour{
 
         Vector2 direction = downDirection;
         float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
-        /*
-        Quaternion rotation = Quaternion.AngleAxis(angle, Vector3.forward);
-        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
-        */
-        /*
-        float rotationMax = rotationRate * Time.deltaTime;
-        float r2 = 180 * Time.deltaTime;
-        float r3 = rotationMax / r2;
-        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, r3);
-        */
         angle -= (transform.eulerAngles.z - 360f);
         angle = angle - Mathf.CeilToInt(angle / 360f) * 360f;
         if (angle < 0) {
             angle += 360f;
         }
         float angleToRotate = angle;
-        //print("before trimming: " + angleToRotate);
 
         bool rotateClockwise = false;
         if (angleToRotate > 180) {
@@ -174,17 +159,6 @@ public class Player : MonoBehaviour{
             Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
             transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
         }
-        /*
-        float max = rotationRate * Time.deltaTime;
-        if (angleToRotate < max) {
-            print("made it");
-            float a = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
-            Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
-            transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
-        }
-        */
-        //else {
-        //print("nah");
         else {
 
             float clockwiseScalar = 1f;
@@ -201,26 +175,6 @@ public class Player : MonoBehaviour{
             }
             transform.Rotate(0, 0, angleToRotate * clockwiseScalar);
         }
-        //}
-        /*
-        if (!rotateClockwise) {
-
-            if (angleToRotate > rotationRate * Time.deltaTime) {
-                angleToRotate = rotationRate * Time.deltaTime;
-            }
-
-            transform.Rotate(0, 0, angleToRotate);
-        }
-        //print("after trimming: " + angleToRotate);
-        else {
-            angleToRotate -= 180;
-            if (angleToRotate > rotationRate * Time.deltaTime) {
-                angleToRotate = rotationRate * Time.deltaTime;
-            }
-
-            transform.Rotate(0, 0, -angleToRotate);
-        }
-        */
     }
 
     void rotatePlayerMidFall() {
@@ -239,14 +193,6 @@ public class Player : MonoBehaviour{
             angle += 360f;
         }
         float angleToRotate = angle;
-        //print("before trimming: " + angleToRotate);
-        /*
-        bool rotateClockwise = false;
-        if (angleToRotate > 180) {
-            rotateClockwise = true;
-        }
-        */
-        //print(angleToRotate);
         bool rotateClockwise = rotateClockwiseInFall;
         if (rotationStableInFall) {
             float a = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
@@ -254,10 +200,8 @@ public class Player : MonoBehaviour{
             transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
         }
         else {
-
             float clockwiseScalar = 1f;
-            if (rotateClockwise && !rotationStableInFall) {
-                //angleToRotate -= 180;
+            if (rotateClockwise) {
                 clockwiseScalar = -1f;
             }
             if (angleToRotate > rotationRate * Time.deltaTime) {
@@ -265,7 +209,6 @@ public class Player : MonoBehaviour{
 
             }
             else {
-                //print("got it");
                 rotationStableInFall = true;
             }
             transform.Rotate(0, 0, angleToRotate * clockwiseScalar);
@@ -320,7 +263,6 @@ public class Player : MonoBehaviour{
     }
     void fallTowardsPlanet() {
         //net acceleration = gravity + normal + friction
-        //print(freeFallSpeed);
         float G = fallingGravityConstant;
         float M = planet.GetComponent<Rigidbody2D>().mass;
         float d = getDistanceToPlanetCenter();
@@ -337,13 +279,8 @@ public class Player : MonoBehaviour{
     float getDistanceToPlanetCenter() {
         float distance_x = transform.position.x - planet.centerPoint.x;
         float distance_y = transform.position.y - planet.centerPoint.y;
-        //print(distance_x);
-        //print(distance_y);
-        //find radial distance, then subtract player's circlecollider radius???
         float distance = Mathf.Sqrt((distance_x * distance_x) + (distance_y * distance_y));
-        //print(distance);
         return distance;
-        //return 0f;
     }
 
     void moveTowardsPlanet() {
@@ -360,29 +297,15 @@ public class Player : MonoBehaviour{
         currentSpeed = 0f;
         rotationStableOnPlanet = false;
         setSpeedOnPlanet();
-        /*
-        Vector3 down = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
-        Vector3 proj = Vector3.Project(freeFallDirection, down);
-        Vector2 downProjection = proj; //amount of velocity that is in the down direction
-        Vector2 flattenedVelocity = (freeFallDirection * freeFallSpeed) - downProjection;
-        currentSpeed = flattenedVelocity.magnitude;
-        */
-        //print(freeFallSpeed);
-        //print(currentSpeed);
-        //currentSpeed = 0f;
     }
     
     void setSpeedOnPlanet() {
-        //print(freeFallSpeed);
         Vector2 down = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
         Vector2 side = Vector2.Perpendicular(down);
         Vector3 s = side;
         Vector3 v = freeFallDirection * freeFallSpeed;
         Vector3 proj = Vector3.Project(v, s);
-        //print(freeFallDirection * freeFallSpeed);
-        //print(proj);
         currentSpeed = proj.magnitude;
-        //print(currentSpeed);
     }
     /*
     void setDirectionOnPlanet() {
