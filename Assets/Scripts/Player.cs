@@ -11,7 +11,7 @@ public class Player : MonoBehaviour{
     public float maxWalkingSpeed = 1f;
     private float maxWalkingSpeedOnPlanet = 1f; //affected by the planet you are on!
     public float walkingAcceleration = 1f;
-    private float currentSpeed = 0f;
+    private float currentSpeed = 0f; //positive is clockwise, negative is counterclockwise
     //public float gravitationalConstant = 1f;
     private bool isOnPlanet = true;
     public float rotationRate = 60f; //degrees per second
@@ -297,6 +297,7 @@ public class Player : MonoBehaviour{
         currentSpeed = 0f;
         rotationStableOnPlanet = false;
         setSpeedOnPlanet();
+        setDirectionOnPlanet();
     }
     
     void setSpeedOnPlanet() {
@@ -307,15 +308,27 @@ public class Player : MonoBehaviour{
         Vector3 proj = Vector3.Project(v, s);
         currentSpeed = proj.magnitude;
     }
-    /*
+    
     void setDirectionOnPlanet() {
-        Vector2 playerRight = transform.forward;
-        Vector3 pr = playerRight;
+        Vector2 down = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
+        Vector2 side = Vector2.Perpendicular(down);
+        Vector3 s = side;
         Vector3 v = freeFallDirection * freeFallSpeed;
-        Vector3 proj = Vector3.Project(v, pr);
+        Vector3 proj = Vector3.Project(v, s);
+        Vector2 p = proj.normalized;
+        if (p == side) {
+            //print("clockwise");
+        }
+        else if (p == -side) {
+            //print("counterclockwise");
+            currentSpeed *= -1;
+        }
+        else {
+            print("there was an error setting your landing movement direction");
+        }
 
     }
-    */
+    
 
     //----------BASIC MOVEMENT AND PLANET SELECTION FUNCTIONS---------------
 
