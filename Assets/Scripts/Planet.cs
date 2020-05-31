@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Planet : MonoBehaviour{
     public Vector2 centerPoint;
+    public Player player;
+    public bool ignorePlayerContact = false; //do not let the player touch this planet until they are at least one body distance away
     public float coefficientOfFriction = 0.6f; //0 is no friction, 1 is equal to normal force
                                                //an ice planet may have 0.2, a normal planet may have 0.6, and a planet with super-friction may have 1
                                                //what would a glue planet have???
@@ -13,11 +15,42 @@ public class Planet : MonoBehaviour{
     }
 
     public void clicked() {
-        GameObject.Find("Player").GetComponent<Player>().clickedPlanet(this);
+        player.clickedPlanet(this);
     }
 
     private void Start() {
+        player = GameObject.Find("Player").GetComponent<Player>();
         centerPoint = GetComponent<CircleCollider2D>().bounds.center;
+    }
+    private void Update() {
+        if (ignorePlayerContact) {
+            if (getDistanceToPlayerCenter() > ((GetComponent<CircleCollider2D>().radius * transform.lossyScale.x) + (player.GetComponent<CircleCollider2D>().radius * player.transform.lossyScale.x * 2))) {
+                ignorePlayerContact = false;
+            }
+        }
+
+        if (!player.isOnPlanet && !ignorePlayerContact) {
+            if (checkCollisionWithPlayer()) {
+                player.touchPlanet(this);
+            }
+        }
+    }
+
+
+    private bool checkCollisionWithPlayer() {
+
+        if (getDistanceToPlayerCenter() < ((GetComponent<CircleCollider2D>().radius * transform.lossyScale.x) + (player.GetComponent<CircleCollider2D>().radius * player.transform.lossyScale.x))) {
+            return true;
+        }
+        return false;
+    }
+
+
+    public float getDistanceToPlayerCenter() {
+        float distance_x = player.transform.position.x - centerPoint.x;
+        float distance_y = player.transform.position.y - centerPoint.y;
+        float distance = Mathf.Sqrt((distance_x * distance_x) + (distance_y * distance_y));
+        return distance;
     }
     /*
     private Player player;
