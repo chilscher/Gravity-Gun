@@ -30,6 +30,8 @@ public class Player : MonoBehaviour{
     public GameObject slowTime;
 
     private bool slowTimeForRotation = false;
+
+    public GameObject minimapCamera;
     
     private void Start() {
         
@@ -113,6 +115,9 @@ public class Player : MonoBehaviour{
         y += add_y;
         Vector2 newPos = new Vector2(x, y);
         transform.position = newPos;
+
+        Vector3 minimapCameraPos = new Vector3(x, y, -10);
+        minimapCamera.transform.position = minimapCameraPos;
     }
 
     void moveAroundPlanet(float distance) {
