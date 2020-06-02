@@ -11,8 +11,8 @@ public class Player : MonoBehaviour{
     public float maxWalkingSpeed = 1f;
     private float maxWalkingSpeedOnPlanet = 1f; //affected by the planet you are on!
     public float walkingAcceleration = 1f;
-    private float currentSpeed = 0f; //positive is clockwise, negative is counterclockwise
-    //public float gravitationalConstant = 1f;
+    [HideInInspector]
+    public float currentSpeed = 0f; //positive is clockwise, negative is counterclockwise
     public bool isOnPlanet = true;
     public float rotationRate = 60f; //degrees per second
     public float rotationRate2 = 90f;
@@ -23,21 +23,28 @@ public class Player : MonoBehaviour{
     private KeyCode rightKey = KeyCode.D;
 
     public GameObject joystick;
-    
-    private Vector2 freeFallDirection;
-    private float freeFallSpeed;
+    [HideInInspector]
+    public Vector2 freeFallDirection;
+    [HideInInspector]
+    public float freeFallSpeed;
     
     public GameObject slowTime;
 
     private bool slowTimeForRotation = false;
-
-    public GameObject minimapCamera;
+    
+    public GameObject minimapControllerGO;
+    private MinimapController minimapController;
+    [HideInInspector]
+    public Vector2 towardsPlanet; // "down" when falling
+    [HideInInspector]
+    public Vector2 perpTowardsPlanet; // to the right of "down" when falling, or the "clockwise" direction tangent to the player
     
     private void Start() {
-        
+        minimapController = minimapControllerGO.GetComponent<MinimapController>();
     }
 
     private void Update() {
+        calculateDirections();
         if (slowTimeForRotation) {
             rotatePlayerInSlowTime();
         }
@@ -59,6 +66,12 @@ public class Player : MonoBehaviour{
 
             }
         }
+        minimapController.showPlayerMovementDirection(this);
+    }
+
+    void calculateDirections() {
+        towardsPlanet = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
+        perpTowardsPlanet = Vector2.Perpendicular(towardsPlanet);
     }
     void setMaxWalkingSpeed() {
         maxWalkingSpeedOnPlanet = maxWalkingSpeed / planet.coefficientOfFriction;
@@ -71,7 +84,6 @@ public class Player : MonoBehaviour{
                 float joystickScale = Mathf.Abs(joystick.GetComponent<FixedJoystick>().Horizontal);
                 joystickScale *= 1.3f; //makes the max speed attainable even if you don't move your thumb 100% to either side
                 if (joystickScale > 1) { joystickScale = 1f; }
-                //print(joystickScale);
                 speedAddition *= joystickScale;
             }
             currentSpeed += speedAddition;
@@ -116,8 +128,7 @@ public class Player : MonoBehaviour{
         Vector2 newPos = new Vector2(x, y);
         transform.position = newPos;
 
-        Vector3 minimapCameraPos = new Vector3(x, y, -10);
-        minimapCamera.transform.position = minimapCameraPos;
+        minimapController.move(x, y);
     }
 
     void moveAroundPlanet(float distance) {
@@ -143,12 +154,20 @@ public class Player : MonoBehaviour{
 
     void rotatePlayerTowardsPlanet() {
         //rotates the player (and its child object the main camera) towards the planet
+        //rotates the full amount required immediately
+        //usually used after slow time is finished, when the player's angle is supposed to continuously track the planet
+        float angleToRotate = angleDifferenceToPlanet();
+        float a = (Mathf.Atan2(towardsPlanet.y, towardsPlanet.x) * Mathf.Rad2Deg) + 90; //in degrees
+        Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
+        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
+    }
 
+    private float angleDifferenceToPlanet() {
+        //returns the angle difference between the player's bottom and the center of the planet vector
         Vector2 playerBottom = transform.up * -1;
-        Vector2 downDirection = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
-        float downAngle = Vector2.Angle(playerBottom, downDirection); //angle in degrees
+        float downAngle = Vector2.Angle(playerBottom, towardsPlanet); //angle in degrees
 
-        Vector2 direction = downDirection;
+        Vector2 direction = towardsPlanet;
         float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
         angle -= (transform.eulerAngles.z - 360f);
         angle = angle - Mathf.CeilToInt(angle / 360f) * 360f;
@@ -156,9 +175,7 @@ public class Player : MonoBehaviour{
             angle += 360f;
         }
         float angleToRotate = angle;
-        float a = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
-        Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
-        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
+        return angleToRotate;
     }
 
     
@@ -189,8 +206,7 @@ public class Player : MonoBehaviour{
         float ag = (G * M) / (d * d);
 
         float gravityMagnitude = ag;
-        Vector2 downDirection = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
-        Vector2 gravityVector = gravityMagnitude * downDirection;
+        Vector2 gravityVector = gravityMagnitude * towardsPlanet;
         freeFallDirection = (freeFallDirection * freeFallSpeed + gravityVector).normalized;
         freeFallSpeed = (freeFallDirection * freeFallSpeed + gravityVector).magnitude;
         
@@ -217,25 +233,21 @@ public class Player : MonoBehaviour{
     }
     
     void setSpeedOnPlanet() {
-        Vector2 down = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
-        Vector2 side = Vector2.Perpendicular(down);
-        Vector3 s = side;
+        Vector3 s = perpTowardsPlanet;
         Vector3 v = freeFallDirection * freeFallSpeed;
         Vector3 proj = Vector3.Project(v, s);
         currentSpeed = proj.magnitude;
     }
     
     void setDirectionOnPlanet() {
-        Vector2 down = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
-        Vector2 side = Vector2.Perpendicular(down);
-        Vector3 s = side;
+        Vector3 s = perpTowardsPlanet;
         Vector3 v = freeFallDirection * freeFallSpeed;
         Vector3 proj = Vector3.Project(v, s);
         Vector2 p = proj.normalized;
-        if (p == side) {
+        if (p == perpTowardsPlanet) {
             //print("clockwise");
         }
-        else if (p == -side) {
+        else if (p == -perpTowardsPlanet) {
             //print("counterclockwise");
             currentSpeed *= -1;
         }
@@ -246,20 +258,9 @@ public class Player : MonoBehaviour{
     }
 
     void rotatePlayerInSlowTime() {
-        Vector2 playerBottom = transform.up * -1;
-        Vector2 downDirection = (planet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized;
-        float downAngle = Vector2.Angle(playerBottom, downDirection); //angle in degrees
-
-        Vector2 direction = downDirection;
-        float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg) + 90; //in degrees
-
-        angle -= (transform.eulerAngles.z - 360f);
-        angle = angle - Mathf.CeilToInt(angle / 360f) * 360f;
-        if (angle < 0) {
-            angle += 360f;
-        }
-        float angleToRotate = angle;
-        //bool rotateClockwise = rotateClockwiseInFall;
+        //rotates the player towards the planet, partially
+        //ususally used right after the player targets a new planet, when the camera rotation needs to be gradual
+        float angleToRotate = angleDifferenceToPlanet();
         bool rotateClockwise = false;
         if (angleToRotate > 180) {
             rotateClockwise = true;
