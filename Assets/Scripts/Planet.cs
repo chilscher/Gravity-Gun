@@ -31,7 +31,7 @@ public class Planet : MonoBehaviour{
 
         if (!player.isOnPlanet && !ignorePlayerContact) {
             if (checkCollisionWithPlayer()) {
-                player.touchPlanet(this);
+                player.landOnPlanet(this);
             }
         }
     }

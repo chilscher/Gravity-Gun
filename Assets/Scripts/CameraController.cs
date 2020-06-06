@@ -7,82 +7,116 @@ using UnityEngine.EventSystems;
 
 public class CameraController : MonoBehaviour{
     public GameObject untouchableButton;
+    public List<GameObject> ignoreTouch; //objects who will not be detected by touch, usually for objects that are a part of another iteractable (children of minimap, etc)
+    public List<GameObject> checkCircleForTouch; //objects who have a defined circlecollider, outside of which they cannot be interacted with (minimap, etc)
+    public List<GameObject> untappable; //objects that, when tapped, will not do anything, but also objects behind them cannot be tapped (joystick, minimap, etc)
 
     private void Update() {
 #if UNITY_EDITOR
-        if (Input.GetMouseButtonDown(0) && !isMouseOverUI()) {
-            
-            Vector3 wp = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            Vector2 touchPos = new Vector2(wp.x, wp.y);
-            if (Physics2D.OverlapPoint(touchPos) != null) {
-                if (Physics2D.OverlapPoint(touchPos).gameObject.tag == "Planet") {
-                    Physics2D.OverlapPoint(touchPos).GetComponent<Planet>().clicked();
-                }
-            }
+        if (Input.GetMouseButtonDown(0)) {
+            List<GameObject> objs = findAllObjectCollisions(Input.mousePosition);
+            GameObject o = chooseObjectToTouch(objs);
+            interactWithObject(o);
         }
 #endif
 
         if (Input.touchCount > 0) {
             for (int i = 0; i< Input.touches.Length; i++) {
                 if (Input.touches[i].phase == TouchPhase.Began) {
-                    if (checkIfPlanetTouched(Input.touches[i])) {
-                        Vector3 wp = Camera.main.ScreenToWorldPoint(Input.touches[i].position);
-                        Vector2 touchPos = new Vector2(wp.x, wp.y);
-                        if (Physics2D.OverlapPoint(touchPos) != null) {
-                            if (Physics2D.OverlapPoint(touchPos).gameObject.tag == "Planet") {
-                                Physics2D.OverlapPoint(touchPos).GetComponent<Planet>().clicked();
-                            }
-                        }
-                    }
+
+                    List<GameObject> objs = findAllObjectCollisions(Input.touches[i].position);
+                    GameObject o = chooseObjectToTouch(objs);
+                    interactWithObject(o);
                 }
             }
         }
     }
-    /*
+
+    private List<GameObject> findAllObjectCollisions(Vector2 pos) {
+        //takes a screen touch position and returns all objects the touch collides with.
+        //ignores any gameobject listed in ignoreTouch
+        //if a gameobject is in checkCircleForTouch, the object is ignored if the touch position is outside the object's circlecollider
+        List<GameObject> allTouchedObjects = new List<GameObject>(); //any object the player's touch collides with
+        List<GameObject> nonIgnoredTouchedObjects = new List<GameObject>(); //eventually, will be all touched objects that are not on any ignore lists
+
+        //find touched UI
+        PointerEventData pointerEventData = new PointerEventData(EventSystem.current);
+        pointerEventData.position = pos;
+        List<RaycastResult> raycastResultList = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerEventData, raycastResultList);
+        for (int i = 0; i < raycastResultList.Count; i++) {
+            allTouchedObjects.Add(raycastResultList[i].gameObject);
+            nonIgnoredTouchedObjects.Add(raycastResultList[i].gameObject);
+        }
+
+        //find touched objects in world space
+        Vector3 wp = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 touchPos = new Vector2(wp.x, wp.y);
+        if (Physics2D.OverlapPoint(touchPos) != null) {
+            allTouchedObjects.Add(Physics2D.OverlapPoint(touchPos).gameObject);
+            nonIgnoredTouchedObjects.Add(Physics2D.OverlapPoint(touchPos).gameObject);
+        }
+
+        //remove ignored objects
+        foreach (GameObject g in allTouchedObjects) {
+            if (ignoreTouch.Contains(g)) {
+                nonIgnoredTouchedObjects.Remove(g);
+            }
+            else if (checkCircleForTouch.Contains(g)) {
+                float xdiff = Input.mousePosition.x - g.GetComponent<CircleCollider2D>().bounds.center.x;
+                float ydiff = Input.mousePosition.y - g.GetComponent<CircleCollider2D>().bounds.center.y;
+                float dist = Mathf.Sqrt(xdiff * xdiff + ydiff * ydiff);
+                if (!(dist <= g.GetComponent<CircleCollider2D>().radius * g.transform.lossyScale.x)) {
+                    nonIgnoredTouchedObjects.Remove(g);
+                }
+            }
+        }
+
+        return nonIgnoredTouchedObjects;
+
+    }
+
+    private GameObject chooseObjectToTouch(List<GameObject> gos) {
+        //out of all of the objects the player touched, only one should have its "tapped" function called
+        //this function determines which, if any, objects are to be tapped.
+
+        //if an untappable object is touched, do nothing
+        //ex: the player script handles the joystick inputs
+        //ex: the player cannot click planets through the minimap
+        foreach (GameObject g in gos) {
+            if (untappable.Contains(g)) {
+                return null;
+            }
+        }
+
+        //if a planet is touched, return it
+        foreach (GameObject g in gos) {
+            if (g.tag == "Planet") {
+                return g;
+            }
+        }
+
+        return null;
+    }
+
+    private void interactWithObject(GameObject obj) {
+        //"taps" an object
+        if (obj == null) { return; }
+        if (obj.tag == "Planet") {
+            obj.GetComponent<Planet>().clicked();
+        }
+    }
+
     private void displayText(string t) {
+        //presents a text-display bar at the top of the screen, to show debug text on mobile
+        GameObject.Find("Canvas").transform.Find("Debug Bar").gameObject.SetActive(true);
         Text text = GameObject.Find("Debug Text").GetComponent<Text>();
         if (text.text == "") {
             text.text += t;
         }
         else { text.text += " / " + t; }
     }
-    */
-
-    private bool checkIfPlanetTouched(Touch touch) {
-        PointerEventData pointerEventData = new PointerEventData(EventSystem.current);
-        pointerEventData.position = touch.position;
-        List<RaycastResult> raycastResultList = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(pointerEventData, raycastResultList);
-        for (int i = 0; i < raycastResultList.Count; i++) {
-            if (raycastResultList[i].gameObject.transform.parent.name == "Canvas") {
-                return false;
-            }
-        }
-        Vector3 wp = Camera.main.ScreenToWorldPoint(touch.position);
-        Vector2 touchPos = new Vector2(wp.x, wp.y);
-        if (Physics2D.OverlapPoint(touchPos) != null) {
-            if (Physics2D.OverlapPoint(touchPos).gameObject.tag == "Planet") {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-
-
-    private bool isMouseOverUI() {
-        PointerEventData pointerEventData = new PointerEventData(EventSystem.current);
-        pointerEventData.position = Input.mousePosition;
-        List<RaycastResult> raycastResultList = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(pointerEventData, raycastResultList);
-        for (int i = 0; i < raycastResultList.Count; i++) {
-            if (raycastResultList[i].gameObject.transform.parent.name == "Canvas") {
-                return true;
-            }
-        }
-        return false;
-    }
+    
     
 
     /*
