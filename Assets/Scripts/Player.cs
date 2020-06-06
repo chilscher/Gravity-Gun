@@ -42,13 +42,20 @@ public class Player : MonoBehaviour{
     //UI elements
     public GameObject minimapControllerGO;
     private MinimapController minimapController;
+    private DialogueManager dialogueManager;
+
+
+    //public DialogueTrigger testDialogue;
 
     
     private void Start() {
         minimapController = minimapControllerGO.GetComponent<MinimapController>();
-
+        dialogueManager = FindObjectOfType<DialogueManager>();
         //the player should land on their planet right away, to set maxWalkingSpeed
         landOnPlanet(planet);
+
+
+        //testDialogue.TriggerDialogue();
     }
 
     private void Update() {
@@ -123,7 +130,7 @@ public class Player : MonoBehaviour{
         //slows the player down if they are not walking, or if their walking direction opposes their motion
         if (!walking || (walking && speedOnSurface * walkingClockwiseScalar < 0)) {
             float G = frictionGravityConstant;
-            float M = planet.GetComponent<Rigidbody2D>().mass;
+            float M = planet.mass;
             float d = planet.GetComponent<CircleCollider2D>().radius;
             float gravityMagnitude = (G * M) / (d * d);
             float coefficientOfFriction = planet.coefficientOfFriction;
@@ -206,10 +213,15 @@ public class Player : MonoBehaviour{
 
     void calculateIsWalking() {
         //sets the "walking" boolean based on player inputs
+        //if the player is in dialogue, they cannot be walking
         walking = false;
         if (Input.GetKey(rightKey) || Input.GetKey(leftKey)) { walking = true; }
         if (Input.GetKey(rightKey) && Input.GetKey(leftKey)) { walking = false; }
         if (joystick.GetComponent<FixedJoystick>().Horizontal != 0) { walking = true; }
+
+        if (dialogueManager.isPlayerInDialogue()) {
+            walking = false;
+        }
     }
 
     void setWalkingDirection() {
@@ -231,7 +243,8 @@ public class Player : MonoBehaviour{
         //makes the player fall toward the chosen planet
         //does nothing if the player already is targeting that planet
         //does nothing if the game is in slow-mo
-        if ((p != planet) && !stopTimeForRotation) {
+        //does nothing if the player is in dialogue
+        if ((p != planet) && !stopTimeForRotation && !dialogueManager.isPlayerInDialogue()) {
             planet.ignorePlayerContact = true; //the player has some time to fall away from the planet
             p.ignorePlayerContact = false; //if the player is going back to a planet they JUST left, they will not fall through it
             planet = p;
@@ -254,7 +267,7 @@ public class Player : MonoBehaviour{
         //used for motion off of the surface of a planet
 
         float G = fallingGravityConstant;
-        float M = planet.GetComponent<Rigidbody2D>().mass;
+        float M = planet.mass;
         float d = planet.getDistanceToPlayerCenter();
         float gravityMagnitude = (G * M) / (d * d);
         Vector2 gravityVector = gravityMagnitude * towardsPlanet;

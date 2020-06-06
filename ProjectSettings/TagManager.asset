@@ -6,6 +6,9 @@ TagManager:
   tags:
   - Planet
   - Checkpoint
+  - Dialogue Box
+  - NPC
+  - Thought Bubble
   layers:
   - Default
   - TransparentFX

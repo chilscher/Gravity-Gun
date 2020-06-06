@@ -53,8 +53,11 @@ public class CameraController : MonoBehaviour{
         Vector3 wp = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector2 touchPos = new Vector2(wp.x, wp.y);
         if (Physics2D.OverlapPoint(touchPos) != null) {
-            allTouchedObjects.Add(Physics2D.OverlapPoint(touchPos).gameObject);
-            nonIgnoredTouchedObjects.Add(Physics2D.OverlapPoint(touchPos).gameObject);
+            Collider2D[] overlaps = Physics2D.OverlapPointAll(touchPos);
+            foreach(Collider2D o in overlaps) {
+                allTouchedObjects.Add(o.gameObject);
+                nonIgnoredTouchedObjects.Add(o.gameObject);
+            }
         }
 
         //remove ignored objects
@@ -71,7 +74,11 @@ public class CameraController : MonoBehaviour{
                 }
             }
         }
-
+        /*
+        foreach(GameObject go in nonIgnoredTouchedObjects) {
+            displayText(go.name);
+        }
+        */
         return nonIgnoredTouchedObjects;
 
     }
@@ -84,16 +91,26 @@ public class CameraController : MonoBehaviour{
         //ex: the player script handles the joystick inputs
         //ex: the player cannot click planets through the minimap
         foreach (GameObject g in gos) {
-            if (untappable.Contains(g)) {
-                return null;
+            if (untappable.Contains(g)) { return null;}
+        }
+
+        //if an NPC or their dialogue bubble is touched, return it
+        foreach(GameObject g in gos) {
+            if (g.tag == "NPC") {return g; }
+            if (g.tag == "Thought Bubble") { return g;}
+        }
+        
+        //if the dialogue box is touched, advance the dialogue
+        foreach(GameObject g in gos) {
+            if(g.tag == "Dialogue Box") {
+                return g;
             }
         }
+        
 
         //if a planet is touched, return it
         foreach (GameObject g in gos) {
-            if (g.tag == "Planet") {
-                return g;
-            }
+            if (g.tag == "Planet") { return g; }
         }
 
         return null;
@@ -102,9 +119,10 @@ public class CameraController : MonoBehaviour{
     private void interactWithObject(GameObject obj) {
         //"taps" an object
         if (obj == null) { return; }
-        if (obj.tag == "Planet") {
-            obj.GetComponent<Planet>().clicked();
-        }
+        if (obj.tag == "Planet") { obj.GetComponent<Planet>().clicked(); }
+        if (obj.tag == "NPC") { obj.GetComponent<NPCDialogue>().tappedNPC(); }
+        if (obj.tag == "Thought Bubble") { obj.transform.parent.GetComponent<NPCDialogue>().tappedBubble(); }
+        if (obj.tag == "Dialogue Box") { FindObjectOfType<DialogueManager>().DisplayNextSentence(); }
     }
 
     private void displayText(string t) {

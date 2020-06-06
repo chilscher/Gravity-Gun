@@ -110,9 +110,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fb256c38a2cd264d88f89a9c4152195, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoRotationSpeed: 1
+  centerPoint: {x: 0, y: 0}
+  player: {fileID: 0}
+  ignorePlayerContact: 0
+  density: 1
+  mass: 0
   coefficientOfFriction: 1
-  thingsOnSurface: []
 --- !u!50 &2238959681720501212
 Rigidbody2D:
   serializedVersion: 4
