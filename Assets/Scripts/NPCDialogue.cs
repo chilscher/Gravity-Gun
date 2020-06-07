@@ -15,6 +15,7 @@ public class NPCDialogue : MonoBehaviour {
         player = FindObjectOfType<Player>();
         dialogueManager = FindObjectOfType<DialogueManager>();
         transform.Find("Bubble").gameObject.SetActive(false);
+        orientNPCTowardPlanet();
     }
 
     private void Update() {
@@ -27,22 +28,11 @@ public class NPCDialogue : MonoBehaviour {
           
         }
         wasPlayerInRangeLastFrame = isPlayerInRangeThisFrame;
-        /*
-        if (isPlayerInRange()) {
-        }
-        else { hideThoughtBubble(); }
-        */
-        //print(isPlayerInRange());
-        /*
-        if (FindObjectOfType<DialogueManager>().dialogueInProgress != this) {
-        }
-        */
 
     }
 
     public void TriggerDialogue() {
         FindObjectOfType<DialogueManager>().StartDialogue(this);
-        //print("start");
     }
 
     private bool isPlayerInRange() {
@@ -103,6 +93,24 @@ public class NPCDialogue : MonoBehaviour {
             return true;
         }
         return false;
+    }
+
+
+    private void orientNPCTowardPlanet() {
+        Vector2 bottom = transform.up * -1;
+        Vector2 planetCenter = planet.GetComponent<CircleCollider2D>().bounds.center;
+        Vector2 towardsPlanet = (planetCenter - new Vector2(transform.position.x, transform.position.y)).normalized;
+        float downAngle = Vector2.Angle(bottom, towardsPlanet); //angle in degrees
+        float angle = (Mathf.Atan2(towardsPlanet.y, towardsPlanet.x) * Mathf.Rad2Deg) + 90; //in degrees
+        angle -= (transform.eulerAngles.z - 360f);
+        angle = angle - Mathf.CeilToInt(angle / 360f) * 360f;
+        if (angle < 0) { angle += 360f; }
+        float angleToRotate = angle;
+
+        float a = (Mathf.Atan2(towardsPlanet.y, towardsPlanet.x) * Mathf.Rad2Deg) + 90; //in degrees
+        Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
+        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
+
     }
 
 

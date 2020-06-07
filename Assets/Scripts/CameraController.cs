@@ -7,9 +7,10 @@ using UnityEngine.EventSystems;
 
 public class CameraController : MonoBehaviour{
     public GameObject untouchableButton;
-    public List<GameObject> ignoreTouch; //objects who will not be detected by touch, usually for objects that are a part of another iteractable (children of minimap, etc)
+    //objects who will not be detected by touch will be tagged with "Ingore Touch". usually objects that are part of another interactable (children of minimap, children of dialogue bubble, etc)
+    //objects that, when tapped, will not do anything, and also block taps on objects behind them, have the "Untappable" tag (joystick, minimap, etc)
     public List<GameObject> checkCircleForTouch; //objects who have a defined circlecollider, outside of which they cannot be interacted with (minimap, etc)
-    public List<GameObject> untappable; //objects that, when tapped, will not do anything, but also objects behind them cannot be tapped (joystick, minimap, etc)
+    public List<GameObject> checkCapsuleForTouch;
 
     private void Update() {
 #if UNITY_EDITOR
@@ -61,8 +62,10 @@ public class CameraController : MonoBehaviour{
         }
 
         //remove ignored objects
+        //objects with the "Ingore Touch" tag are automatically ignored
+        //objects in the "check circle for touch" list are ignored if the touch is outside the bounds of the object's circlecollider
         foreach (GameObject g in allTouchedObjects) {
-            if (ignoreTouch.Contains(g)) {
+            if (g.tag == "Ignore Touch") {
                 nonIgnoredTouchedObjects.Remove(g);
             }
             else if (checkCircleForTouch.Contains(g)) {
@@ -88,10 +91,11 @@ public class CameraController : MonoBehaviour{
         //this function determines which, if any, objects are to be tapped.
 
         //if an untappable object is touched, do nothing
+        //these objects have the "Untappable" tag
         //ex: the player script handles the joystick inputs
         //ex: the player cannot click planets through the minimap
         foreach (GameObject g in gos) {
-            if (untappable.Contains(g)) { return null;}
+            if (g.tag == "Untappable") { return null;}
         }
 
         //if an NPC or their dialogue bubble is touched, return it

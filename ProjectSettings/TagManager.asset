@@ -9,6 +9,8 @@ TagManager:
   - Dialogue Box
   - NPC
   - Thought Bubble
+  - Ingore Tocuh
+  - Untappable
   layers:
   - Default
   - TransparentFX
