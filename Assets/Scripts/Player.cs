@@ -44,8 +44,11 @@ public class Player : MonoBehaviour{
     private MinimapController minimapController;
     private DialogueManager dialogueManager;
 
-
+    //public GameObject box;
     //public DialogueTrigger testDialogue;
+
+    //private bool blockedClockwise = false;
+    //private bool blockedCounterclockwise = false;
 
     
     private void Start() {
@@ -94,6 +97,9 @@ public class Player : MonoBehaviour{
         Vector2 newPos = new Vector2(x, y);
         transform.position = newPos;
 
+        //float dist = Mathf.Sqrt((add_x * add_x) + (add_y * add_y));
+        //print(dist);
+
         minimapController.move(x, y);
     }
 
@@ -104,7 +110,7 @@ public class Player : MonoBehaviour{
 
     void setMaxWalkingSpeed() {
         //sets the player's maxWalkingSpeed on the surface of a planet.
-        //scales opposite of the planet's coefficientOfFriction - higher friction = lower max speed
+        //scales opposite of the planet's coefficientOfFriction: higher friction = lower max speed
         maxWalkingSpeedOnPlanet = maxWalkingSpeed / planet.coefficientOfFriction;
     }
 
@@ -168,6 +174,13 @@ public class Player : MonoBehaviour{
         float del_x = (x2 - x);
         float del_y = (y2 - y);
         move(del_x, del_y);
+
+        //print(checkIfPlayerHitObstacleOnPlanet());
+        BoxCollider2D obstacleHit = checkIfPlayerHitObstacleOnPlanet();
+        if (obstacleHit != null) {
+            movePlayerToEdgeOfObstacle(obstacleHit);
+            speedOnSurface = 0f;
+        }
     }
 
     public void landOnPlanet(Planet p) {
@@ -337,4 +350,180 @@ public class Player : MonoBehaviour{
         transform.Rotate(0, 0, angleToRotate * clockwiseScalar);
     }
     
+
+
+
+
+    Vector2[] getCorners(BoxCollider2D box) {
+        //gets the corners in world space of the box collider
+        //float width = box.size.x * box.transform.lossyScale.x;
+        //float height = box.size.y * box.transform.lossyScale.y;
+        float width = box.size.x;
+        float height = box.size.y;
+        Vector2 tll = new Vector2(-width, height) * 0.5f;
+        Vector2 trl = new Vector2(width, height) * 0.5f;
+        Vector2 bll = new Vector2(-width, -height) * 0.5f;
+        Vector2 brl = new Vector2(width, -height) * 0.5f;
+        Vector2 tlw = box.transform.TransformPoint(tll); //top-left in world space
+        Vector2 trw = box.transform.TransformPoint(trl); //top-right in world space
+        Vector2 blw = box.transform.TransformPoint(bll); //bottom-left in world space
+        Vector2 brw = box.transform.TransformPoint(brl); //bottom-right in world space
+        Vector2[] result = new Vector2[4];
+        result[0] = tlw;
+        result[1] = trw;
+        result[2] = blw;
+        result[3] = brw;
+        return result;
+    }
+
+    Vector2 findIntersectionPoint(Vector2 planetCenter, float radiusOfPlayerSide, Vector2 boxTopCorner, Vector2 boxBottomCorner, Vector2 playerSidePoint) {
+        //finds the point that the player's left or right edge should be set to when they collide with an obstacle while walking on a planet
+        //specifically, draws a circle around the planet with a defined radius, and sees where that circle intersects a line that goes through boxTopConer and boxBottomCorner
+        //this intersection will occur at two points. We want to take the point closer to boxTopCorner
+        //equation of a circle: r^2 = (x - h)^2 + (y - k)^2, where h is planet_center.x, and k is planet_center.y, and r is the radius of the circle
+        //equation of a line: y = mx+b, where m is the line's slope and b is the y-intercept
+
+        //if x1 and y1 are the bottom corner of the box, and x2 and y2 are the top corner (it makes no difference either way)...
+        float x1 = boxBottomCorner.x;
+        float x2 = boxTopCorner.x;
+        float y1 = boxBottomCorner.y;
+        float y2 = boxTopCorner.y;
+        //y2-y2 = (m(x2)+b) - (m(x1)+b), or y2 - y1 = m (x2 - x1), or m = (y2 - y1) / (x2 - x1)
+        float m = (y2 - y1) / (x2 - x1); //slope of line
+        //y1 = m(x1) + b, or b = y1 - m(x1)
+        float b = y1 - (m * x1); //y-intercept of line
+
+        //the intersection point on the equation of the circle is then defined as r^2 = (x - h)^2 + (y - k)^2 with y being equal to mx+b
+        //which can also be written as r^2 = (x - h)^2 + ((mx+b) - k)^2
+        //factoring this out gives r^2 = x^2 - 2xh + h^2 + m^2x^2 + 2mbx - 2mkx + (b-k)^2
+        //if A = ((m^2) + 1), and B = 2m(b-k) - 2h, then r^2 = Ax^2 + Bx + (h^2 + (b - k)^2)
+        //if C = (h^2 + (b - k)^2) - r^2, then Ax^2 + Bx + C = 0, where A, B, and C are all constants
+        //this is a simple quadratic equation, where the solution is: x= (-B += sqrt(B^2 - 4AC)) / 2A
+        float h = planetCenter.x;
+        float k = planetCenter.y;
+        float r = radiusOfPlayerSide;
+        float A = (m * m) + 1f;
+        float B = 2 * m * (b - k) - 2 * h;
+        float C = (h * h) + (b - k) * (b - k) - (r * r);
+        float sqrtPart = Mathf.Sqrt((B * B) - (4 * A * C));
+        float solX1 = (sqrtPart - B) / (2 * A); //the x-component of the first intersection point
+        float solX2 = (-sqrtPart - B) / (2 * A); //the x-component of the second intersection point
+        float solY1 = (m * solX1) + b;
+        float solY2 = (m * solX2) + b;
+        Vector2 sol1 = new Vector2(solX1, solY1);
+        Vector2 sol2 = new Vector2(solX2, solY2);
+
+        //find which solution is closer to the player's side point - fine to do unless the player is traveling all the way around the planet in a single frame
+        //this situation is already problematic because it means the player would not even be inside the boxcollider at all at that point, so none of this code would be running
+        float dist1 = Vector2.Distance(sol1, playerSidePoint);
+        float dist2 = Vector2.Distance(sol2, playerSidePoint);
+        if (dist1 < dist2) {
+            return sol1;
+        }
+        else {
+            return sol2;
+        }
+    }
+
+    void movePlayerTouchingPoint(Vector2 point, bool rightSide) {
+        
+        //takes the right bound of the player's circleCollider and moves the player so that it touches point
+        //if rightSide is false, then moves to fit the left circlecollider bound
+        
+        //Vector2 cent = GetComponent<CircleCollider2D>().bounds.center;
+        float rad = GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
+        Vector2 dist = perpTowardsPlanet * rad;
+        Vector2 leftDist = -dist;
+        Vector2 rightDist = dist;
+
+        Vector2 leftPos = point + leftDist;
+        Vector2 rightPos = point + rightDist;
+        //Vector2 leftEdge = cent + (-perpTowardsPlanet * rad);
+        //Vector2 rightEdge = cent + (perpTowardsPlanet * rad);
+        if (!rightSide) {
+            transform.position = rightPos;
+        }
+        else {
+            transform.position = leftPos;
+        }
+        
+    }
+
+
+    BoxCollider2D checkIfPlayerHitObstacleOnPlanet() {
+        //if the player is on a planet, checks all of the children objects with the tag "Obstacle"
+        //if the player's left or right collision points are inside the obstacle, return the BoxCollider2D component
+
+        Vector2 cent = GetComponent<CircleCollider2D>().bounds.center;
+        Vector2 leftDir = -perpTowardsPlanet;
+        float rad = GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
+
+        Vector2 leftEdge = cent + (leftDir * rad);
+        Vector2 rightEdge = cent + (perpTowardsPlanet * rad);
+        
+        foreach(Transform child in planet.transform) {
+            if (child.tag == "Obstacle") {
+                //print("obstacle");
+                BoxCollider2D ob = child.GetComponent<BoxCollider2D>();
+                if (ob.OverlapPoint(leftEdge)) {
+                    return ob;
+                }
+                else if (ob.OverlapPoint(rightEdge)) {
+                    return ob;
+                }
+            }
+        }
+        return null;
+    }
+
+    void movePlayerToEdgeOfObstacle(BoxCollider2D obstacle) {
+        //moves the player so they are positioned directly next to obstacle
+        //assumes the player is overlapping the edge of the obstacle on one of the player's sides
+        //also assumes the player is not entirely inside the obstacle
+
+        Vector2 cent = GetComponent<CircleCollider2D>().bounds.center;
+        Vector2 leftDir = -perpTowardsPlanet;
+        float rad = GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
+
+        Vector2 leftEdge = cent + (leftDir * rad);
+        Vector2 rightEdge = cent + (perpTowardsPlanet * rad);
+
+        bool collidedOnLeftOfPlayer = false;
+        bool collidedOnRightOfPlayer = false;
+        //bool collided_with_obj = false;
+        if (obstacle.OverlapPoint(leftEdge)) {
+            //collided_with_obj = true;
+            collidedOnLeftOfPlayer = true;
+        }
+        else if (obstacle.OverlapPoint(rightEdge)) {
+            //collided_with_obj = true;
+            collidedOnRightOfPlayer = true;
+        }
+        if (collidedOnLeftOfPlayer || collidedOnRightOfPlayer) {
+            //find height of the player's left/right edge from the center of the planet
+            float playerEdgeRadius = Vector2.Distance(leftEdge, planet.centerPoint);
+            //get corners of boxcollider next to player
+            Vector2[] corners = getCorners(obstacle); //[0] is top-left corner, [1] is top-right, [2] is bottom-left, [3] is bottom-right
+            //assuming the boxcollider is oriented so the bottom is facing the planet...
+            Vector2 topCorner;
+            Vector2 bottomCorner;
+            Vector2 touchedSide;
+            if (collidedOnLeftOfPlayer) {
+                //collided on player's left, meaning on the obstacle's right, assuming player is facing down towards planet
+                topCorner = corners[1];
+                bottomCorner = corners[3];
+                touchedSide = leftEdge;
+            }
+            else {
+                //collided on player's right, meaning on the obstacle's left, assuming player is facing down towards planet
+                topCorner = corners[0];
+                bottomCorner = corners[2];
+                touchedSide = rightEdge;
+            }
+
+            Vector2 point = findIntersectionPoint(planet.centerPoint, playerEdgeRadius, topCorner, bottomCorner, touchedSide);
+            movePlayerTouchingPoint(point, collidedOnRightOfPlayer);
+
+        }
+    }
 }

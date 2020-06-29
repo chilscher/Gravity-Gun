@@ -11,6 +11,7 @@ TagManager:
   - Thought Bubble
   - Ingore Tocuh
   - Untappable
+  - Obstacle
   layers:
   - Default
   - TransparentFX
