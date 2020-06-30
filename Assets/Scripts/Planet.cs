@@ -32,12 +32,19 @@ public class Planet : MonoBehaviour{
                 ignorePlayerContact = false;
             }
         }
+        /*
+        if (ignorePlayerContact) {
+            if (getDistanceToPlayerCenter() > ((GetComponent<CircleCollider2D>().radius * transform.lossyScale.x) + (player.GetComponent<CircleCollider2D>().radius * player.transform.lossyScale.x * 2))) {
+                ignorePlayerContact = false;
+            }
+        }
 
         if (!player.isOnPlanet && !ignorePlayerContact) {
             if (checkCollisionWithPlayer()) {
                 player.landOnPlanet(this);
             }
         }
+        */
     }
 
 

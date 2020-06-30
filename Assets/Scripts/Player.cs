@@ -81,7 +81,7 @@ public class Player : MonoBehaviour{
                 fallTowardsPlanet();
                 moveTowardsPlanet();
                 rotatePlayerTowardsPlanet();
-
+                checkForCollisions();
             }
         }
         minimapController.showPlayerMovementDirection(this);
@@ -185,7 +185,7 @@ public class Player : MonoBehaviour{
 
     public void landOnPlanet(Planet p) {
         //all of the functions that have to be called when the player lands on the surface of a planet
-        //called by planet.Update
+        //called by checkForCollisions
         //sets the player's speed and direction of motion
         //rotates the player towards the planet, if they were not already facing it
 
@@ -490,13 +490,10 @@ public class Player : MonoBehaviour{
 
         bool collidedOnLeftOfPlayer = false;
         bool collidedOnRightOfPlayer = false;
-        //bool collided_with_obj = false;
         if (obstacle.OverlapPoint(leftEdge)) {
-            //collided_with_obj = true;
             collidedOnLeftOfPlayer = true;
         }
         else if (obstacle.OverlapPoint(rightEdge)) {
-            //collided_with_obj = true;
             collidedOnRightOfPlayer = true;
         }
         if (collidedOnLeftOfPlayer || collidedOnRightOfPlayer) {
@@ -526,4 +523,157 @@ public class Player : MonoBehaviour{
 
         }
     }
+    
+    void checkForCollisions() {
+        //checks the 8 main directions, in local coordinates, around the player for collisions
+        //top-left, top-mid, top-right, right-mid, bottom-right, bottom-mid, bottom-left, left-mid
+        //specifically, any planets or obstacles are added to a list of collided objects
+
+        //determine points to test
+        Vector2[] playerEdges = getPlayerEdgePositions();
+
+        //check all 8 positions for collisions with planet and obstacle colliders
+        List<GameObject> collisions = new List<GameObject>();
+        foreach (Vector2 position in playerEdges) {
+            if (Physics2D.OverlapPoint(position) != null) {
+                Collider2D[] overlaps = Physics2D.OverlapPointAll(position);
+                foreach (Collider2D o in overlaps) {
+                    if (o.gameObject.tag == "Planet" || o.gameObject.tag == "Obstacle") {
+                        if (!collisions.Contains(o.gameObject)) {
+                            collisions.Add(o.gameObject);
+                        }
+                    }
+                }
+            }
+        }
+
+        //if any of the collisions is a planet, land on that planet
+        foreach (GameObject go in collisions) {
+            if (go.tag == "Planet") {
+                if (!go.GetComponent<Planet>().ignorePlayerContact && !isOnPlanet) {
+                    landOnPlanet(go.GetComponent<Planet>());
+                    return;
+                }
+            }
+        }
+        //if any of the collisions is an obstacle, land on that obstacle
+        foreach (GameObject go in collisions) {
+            if (go.tag == "Obstacle") {
+                hitObstacleInFall(go);
+                return;
+            }
+        }
+
+    }
+
+    void hitObstacleInFall(GameObject obstacle) {
+        //called by checkForCollisions, when the player collides with an obstacle mid-fall
+        //they will land on the obstacle if their collision was with the top of the obstacle
+        //they will fall towards the planet if their collision was with the side of the obstacle
+        //specifically, if the point of contact is closer to the left or right edges of the obstacle, the player should fall
+        //if the point of contact is closer to the top, the player should land on the obstacle
+
+        //get collision point
+        Vector2[] playerEdges = getPlayerEdgePositions();
+        Vector2 collisionPoint = Vector2.zero;
+        foreach(Vector2 point in playerEdges) {
+            if (obstacle.GetComponent<BoxCollider2D>().OverlapPoint(point)) {
+                collisionPoint = point;
+            }
+        }
+
+        //get edges of obstacle boxCollider
+        Vector2[] corners = getCorners(obstacle.GetComponent<BoxCollider2D>()); //[0] is top-left corner, [1] is top-right, [2] is bottom-left, [3] is bottom-right
+
+        float leftDistance = FindDistanceToLine(collisionPoint, corners[0], corners[2]);
+        float topDistance = FindDistanceToLine(collisionPoint, corners[0], corners[1]);
+        float rightDistance = FindDistanceToLine(collisionPoint, corners[1], corners[3]);
+
+        if (leftDistance < topDistance && leftDistance < rightDistance) {
+            print("hit on left side!");
+        }
+        else if (rightDistance < topDistance && rightDistance < leftDistance) {
+            print("hit on right side!");
+        }
+        else{
+            print("hit on top!");
+        }
+
+
+    }
+    /*
+    void landOnObstacle(GameObject obstacle) {
+        //all of the functions that have to be called when the player collides with an obstacle
+        //called by checkForCollisions
+        //sets the player's speed and direction of motion
+        //rotates the player towards the planet, if they were not already facing it
+
+        if (planet != p) {
+            //enter slow time mode and rotate player until they are facing the right way
+            stopTimeForRotation = true;
+            stopTimeOverlay.SetActive(true);
+        }
+        isOnPlanet = true;
+        planet = p;
+        speedOnSurface = 0f;
+        setSpeedOnPlanet();
+        setDirectionOnPlanet();
+        setMaxWalkingSpeed();
+    }
+    */
+
+    Vector2[] getPlayerEdgePositions() {
+        //returns a list of 8 points around the player's center
+        //if you draw a square around the player, there will be 4 points on the vertices of that square, and 4 points on the midpoints of the edges of the square
+        Vector2 cent = GetComponent<CircleCollider2D>().bounds.center;
+        Vector2 downDir = transform.up * -1;
+        Vector2 upDir = transform.up;
+        Vector2 leftDir = -perpTowardsPlanet;
+        Vector2 rightDir = perpTowardsPlanet;
+
+        Vector2 downAmt = downDir * GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
+        Vector2 upAmt = upDir * GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
+        Vector2 leftAmt = leftDir * GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
+        Vector2 rightAmt = rightDir * GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
+
+        Vector2 bottomPos = cent + downAmt;
+        Vector2 topPos = cent + upAmt;
+        Vector2 leftPos = cent + leftAmt;
+        Vector2 rightPos = cent + rightAmt;
+        Vector2 topLeftPos = cent + upAmt + leftAmt;
+        Vector2 topRightPos = cent + upAmt + rightAmt;
+        Vector2 bottomLeftPos = cent + downAmt + leftAmt;
+        Vector2 bottomRightPos = cent + downAmt + rightAmt;
+
+        Vector2[] positions = new Vector2[8];
+        positions[0] = bottomPos;
+        positions[1] = topPos;
+        positions[2] = leftPos;
+        positions[3] = rightPos;
+        positions[4] = topLeftPos;
+        positions[5] = topRightPos;
+        positions[6] = bottomLeftPos;
+        positions[7] = bottomRightPos;
+
+        return positions;
+    }
+
+
+    private float FindDistanceToLine(Vector2 solitaryPoint, Vector2 lineEndpoint1, Vector2 lineEndpoint2) {
+        //finds the distance from a point to a line
+        //used in hitObstacleInFall
+        //gets the shortest distance that can be drawn from the solitaryPoint to a line that connects lineEndpoint1 and lineEndpoint2
+        //uses code found at http://csharphelper.com/blog/2016/09/find-the-shortest-distance-between-a-point-and-a-line-segment-in-c/
+
+        float dx = lineEndpoint2.x - lineEndpoint1.x;
+        float dy = lineEndpoint2.y - lineEndpoint1.y;
+        float t = ((solitaryPoint.x - lineEndpoint1.x) * dx + (solitaryPoint.y - lineEndpoint1.y) * dy) / (dx * dx + dy * dy);
+        Vector2 closest = new Vector2(lineEndpoint1.x + t * dx, lineEndpoint1.y + t * dy);
+        dx = solitaryPoint.x - closest.x;
+        dy = solitaryPoint.y - closest.y;
+        return Mathf.Sqrt(dx * dx + dy * dy);
+    }
+
+
+
 }
