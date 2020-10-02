@@ -44,6 +44,14 @@ public class Player : MonoBehaviour{
     private MinimapController minimapController;
     private DialogueManager dialogueManager;
 
+
+
+    private bool hitObstacleSide = false;
+    private bool hitObstacleTop = false;
+    private bool fallingOffObstacle = false;
+    private BoxCollider2D obstacle;
+    //private BoxCollider2D fallingOffObstacle;
+
     //public GameObject box;
     //public DialogueTrigger testDialogue;
 
@@ -68,7 +76,7 @@ public class Player : MonoBehaviour{
         }
         else {
             if (isOnPlanet) {
-                //handles movement in the surface of the planet
+                //handles movement on the surface of the planet
                 calculateIsWalking();
                 setWalkingDirection();
                 accelerateFromWalk();
@@ -76,6 +84,26 @@ public class Player : MonoBehaviour{
                 moveAroundPlanet(speedOnSurface * Time.deltaTime);
                 rotatePlayerTowardsPlanet();
             }
+            else if (hitObstacleTop) {
+                //handles movement on the surface of an obstacle
+                calculateIsWalking();
+                setWalkingDirection();
+                accelerateFromWalk();
+                accelerateFromFriction();
+                moveAroundObstacle(speedOnSurface * Time.deltaTime);
+                //moveAroundPlanet(speedOnSurface * Time.deltaTime);
+                rotatePlayerTowardsPlanet();
+                checkForFallingOffObstacle();
+            }
+            else if (hitObstacleSide) {
+                fallTowardsPlanet();
+                moveTowardsPlanet();
+                movePlayerToEdgeOfObstacle(obstacle);
+
+                rotatePlayerTowardsPlanet();
+                checkForCollisions();
+            }
+
             else {
                 //handles movement in free-fall
                 fallTowardsPlanet();
@@ -183,6 +211,8 @@ public class Player : MonoBehaviour{
         }
     }
 
+
+
     public void landOnPlanet(Planet p) {
         //all of the functions that have to be called when the player lands on the surface of a planet
         //called by checkForCollisions
@@ -200,6 +230,10 @@ public class Player : MonoBehaviour{
         setSpeedOnPlanet();
         setDirectionOnPlanet();
         setMaxWalkingSpeed();
+
+        hitObstacleSide = false;
+        hitObstacleTop = false;
+        fallingOffObstacle = false;
     }
 
     void setSpeedOnPlanet() {
@@ -559,7 +593,14 @@ public class Player : MonoBehaviour{
         //if any of the collisions is an obstacle, land on that obstacle
         foreach (GameObject go in collisions) {
             if (go.tag == "Obstacle") {
-                hitObstacleInFall(go);
+                if (!hitObstacleSide && !hitObstacleTop && !go.transform.parent.GetComponent<Planet>().ignorePlayerContact) {
+                    if (!(fallingOffObstacle && obstacle == go.GetComponent<BoxCollider2D>())) {
+                        hitObstacleInFall(go);
+                    }
+                }
+                else if (hitObstacleSide && obstacle != go.GetComponent<BoxCollider2D>()) {
+                    hitObstacleInFall(go);
+                }
                 return;
             }
         }
@@ -590,17 +631,50 @@ public class Player : MonoBehaviour{
         float rightDistance = FindDistanceToLine(collisionPoint, corners[1], corners[3]);
 
         if (leftDistance < topDistance && leftDistance < rightDistance) {
+            hitObstacleOnSide(obstacle);
             print("hit on left side!");
         }
         else if (rightDistance < topDistance && rightDistance < leftDistance) {
+            hitObstacleOnSide(obstacle);
             print("hit on right side!");
         }
         else{
+            hitObstacleOnTop(obstacle);
             print("hit on top!");
         }
 
 
     }
+
+    
+    void hitObstacleOnSide(GameObject obstacle) {
+        hitObstacleSide = true;
+        this.obstacle = obstacle.GetComponent<BoxCollider2D>();
+        if (obstacle.transform.parent.GetComponent<Planet>() != planet) {
+            stopTimeForRotation = true;
+            stopTimeOverlay.SetActive(true);
+            
+            planet = obstacle.transform.parent.GetComponent<Planet>();
+        }
+
+        movePlayerToEdgeOfObstacle(obstacle.GetComponent<BoxCollider2D>());
+        
+        //halt all momentum
+        freeFallSpeed = 0f;
+    }
+
+    void hitObstacleOnTop(GameObject obstacle) {
+        hitObstacleTop = true;
+        this.obstacle = obstacle.GetComponent<BoxCollider2D>();
+
+        if (obstacle.transform.parent.GetComponent<Planet>() != planet) {
+            stopTimeForRotation = true;
+            stopTimeOverlay.SetActive(true);
+
+            planet = obstacle.transform.parent.GetComponent<Planet>();
+        }
+    }
+    
     /*
     void landOnObstacle(GameObject obstacle) {
         //all of the functions that have to be called when the player collides with an obstacle
@@ -674,6 +748,71 @@ public class Player : MonoBehaviour{
         return Mathf.Sqrt(dx * dx + dy * dy);
     }
 
+    void moveAroundObstacle(float distance) {
+        //moves the player a certain distance around the surface of the planet.
+        //the distance is not linear; it is an arc length
+        //assumes motion clockwise. for motion counterclockwise, use a negative distance
+        float planet_center_x = planet.centerPoint.x;
+        float planet_center_y = planet.centerPoint.y;
+        float x = transform.position.x - planet_center_x;
+        float y = transform.position.y - planet_center_y;
 
+        Vector2[] corners = getCorners(obstacle);
+        float rad = FindDistanceToLine(planet.centerPoint, corners[0], corners[1]);
+        
+        float r = rad + GetComponent<CircleCollider2D>().radius;
+        float s = distance * -1;
+        float theta = (s / r) + Mathf.Atan(y / x);
+        if (x < 0) {
+            theta += Mathf.PI;
+        }
+        float x2 = r * Mathf.Cos(theta);
+        float y2 = r * Mathf.Sin(theta);
+        float del_x = (x2 - x);
+        float del_y = (y2 - y);
+        move(del_x, del_y);
 
+        //print(checkIfPlayerHitObstacleOnPlanet());
+        BoxCollider2D obstacleHit = checkIfPlayerHitObstacleOnPlanet();
+        if (obstacleHit != null) {
+            movePlayerToEdgeOfObstacle(obstacleHit);
+            speedOnSurface = 0f;
+        }
+        
+    }
+
+    void checkForFallingOffObstacle() {
+        //checks the 8 main directions, in local coordinates, around the player for collisions
+        //top-left, top-mid, top-right, right-mid, bottom-right, bottom-mid, bottom-left, left-mid
+        //specifically, any planets or obstacles are added to a list of collided objects
+        
+        //determine points to test
+        Vector2[] playerEdges = getPlayerEdgePositions();
+
+        //check if any point on the player's edges is inside the obstacle
+        bool isIn = false;
+        foreach(Vector2 point in playerEdges) {
+            if (obstacle.bounds.Contains(point)) {
+                isIn = true;
+            }
+        }
+
+        if (!isIn) {
+            FallOffObstacle();
+        }
+    }
+
+    void FallOffObstacle() {
+        hitObstacleTop = false;
+        fallingOffObstacle = true;
+        //movePlayerToEdgeOfObstacle(obstacle);
+        //hitObstacleSide = true;
+        freeFallSpeed = Mathf.Abs(speedOnSurface);
+        if (speedOnSurface != 0) {
+            freeFallDirection = Vector2.Perpendicular(transform.up * -1).normalized;
+            if (freeFallSpeed != speedOnSurface) {
+                freeFallDirection *= -1f;
+            }
+        }
+    }
 }
