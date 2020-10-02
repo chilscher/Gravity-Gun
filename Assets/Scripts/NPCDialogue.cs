@@ -15,16 +15,16 @@ public class NPCDialogue : MonoBehaviour {
         player = FindObjectOfType<Player>();
         dialogueManager = FindObjectOfType<DialogueManager>();
         transform.Find("Bubble").gameObject.SetActive(false);
-        orientNPCTowardPlanet();
+        OrientNPCTowardPlanet();
     }
 
     private void Update() {
-        bool isPlayerInRangeThisFrame = isPlayerInRange();
+        bool isPlayerInRangeThisFrame = IsPlayerInRange();
         if (!wasPlayerInRangeLastFrame && isPlayerInRangeThisFrame) {
-            showThoughtBubble();
+            ShowThoughtBubble();
         }
         else if (wasPlayerInRangeLastFrame && !isPlayerInRangeThisFrame) {
-            hideThoughtBubble();
+            HideThoughtBubble();
           
         }
         wasPlayerInRangeLastFrame = isPlayerInRangeThisFrame;
@@ -35,7 +35,7 @@ public class NPCDialogue : MonoBehaviour {
         FindObjectOfType<DialogueManager>().StartDialogue(this);
     }
 
-    private bool isPlayerInRange() {
+    private bool IsPlayerInRange() {
         //checks to see if the player is close enough to have the NPC speech bubble pop up
         //returns false if the player is on a different planet from the NPC
         if ((player.planet != planet) || !player.isOnPlanet) {
@@ -54,20 +54,20 @@ public class NPCDialogue : MonoBehaviour {
         return false;
     }
 
-    private void showThoughtBubble() {
+    private void ShowThoughtBubble() {
         transform.Find("Bubble").gameObject.SetActive(true);
     }
 
-    private void hideThoughtBubble() {
+    private void HideThoughtBubble() {
         transform.Find("Bubble").gameObject.SetActive(false);
     }
 
-    public void tappedBubble() {
+    public void TappedBubble() {
         //interact with the thought bubble
         //does the same thing as interacting with the NPC
-        tappedNPC();
+        TappedNPC();
     }
-    public void tappedNPC() {
+    public void TappedNPC() {
         //interact with the NPC
         //if the dialogue thought bubble is visible, start a conversation
         //if the player is moving, do not start a conversation
@@ -77,17 +77,17 @@ public class NPCDialogue : MonoBehaviour {
         if (transform.Find("Bubble").gameObject.activeSelf) {
             //print("npc");
             TriggerDialogue();
-            hideThoughtBubble();
+            HideThoughtBubble();
         }
         else {
             //if the dialogueManager is already handling the current dialogue, then show the next bit of dialogue.
-            if (isDialogueOngoing()) {
+            if (IsDialogueOngoing()) {
                 dialogueManager.DisplayNextSentence();
             }
         }
     }
 
-    private bool isDialogueOngoing() {
+    private bool IsDialogueOngoing() {
 
         if ((!transform.Find("Bubble").gameObject.activeSelf) && dialogueManager.ongoingDialogue == this) {
             return true;
@@ -96,7 +96,7 @@ public class NPCDialogue : MonoBehaviour {
     }
 
 
-    private void orientNPCTowardPlanet() {
+    private void OrientNPCTowardPlanet() {
         Vector2 bottom = transform.up * -1;
         Vector2 planetCenter = planet.GetComponent<CircleCollider2D>().bounds.center;
         Vector2 towardsPlanet = (planetCenter - new Vector2(transform.position.x, transform.position.y)).normalized;

@@ -14,10 +14,6 @@ public class DialogueManager : MonoBehaviour {
 	private Queue<string> sentences;
     private bool typingSentence = false;
     private string currentSentence;
-    /*
-    [HideInInspector]
-    public NPCDialogue dialogueInProgress = null;
-    */
 
     [HideInInspector]
     public NPCDialogue ongoingDialogue;
@@ -25,7 +21,7 @@ public class DialogueManager : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		sentences = new Queue<string>();
-        showDialogueBox(false);
+        ShowDialogueBox(false);
         //transform.Find("Bubble Background").gameObject.SetActive(false);
         //transform.Find("Dialogue Text").gameObject.SetActive(false);
     }
@@ -36,7 +32,7 @@ public class DialogueManager : MonoBehaviour {
 
         //nameText.text = dialogue.name;
         ongoingDialogue = dialogueTrigger;
-        showDialogueBox(true);
+        ShowDialogueBox(true);
         //dialogueText.transform.parent.Find("Bubble Background").gameObject.SetActive(true);
         //dialogueText.gameObject.SetActive(true);
 
@@ -68,7 +64,7 @@ public class DialogueManager : MonoBehaviour {
                 return;
             }
 
-            string sentence = formatTextForBox(sentences.Dequeue());
+            string sentence = FormatTextForBox(sentences.Dequeue());
             StopAllCoroutines();
             StartCoroutine(TypeSentence(sentence));
         }
@@ -92,24 +88,24 @@ public class DialogueManager : MonoBehaviour {
 	void EndDialogue()
 	{
         //dialogueInProgress = null;
-        showDialogueBox(false);
+        ShowDialogueBox(false);
         //animator.SetBool("IsOpen", false);
     }
 
-    public bool isPlayerInDialogue() {
+    public bool IsPlayerInDialogue() {
         if (dialogueText.gameObject.activeSelf) {
             return true;
         }
         return false;
     }
 
-    private void showDialogueBox(bool b) {
+    private void ShowDialogueBox(bool b) {
 
         bubbleBackground.SetActive(b);
         dialogueText.SetActive(b);
     }
 
-    private string formatTextForBox(string sentence) {
+    private string FormatTextForBox(string sentence) {
         //takes a sentence and adds new line characters
         //this is done so that when TypeSentence is filling in the text box, it doesn't get halfway through a word before starting a new line
         //the sentence cannot have any new line characters in it already

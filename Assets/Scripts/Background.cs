@@ -10,20 +10,20 @@ public class Background : MonoBehaviour{
     
     void Start(){
         mainCamera = Camera.main;
-        setPrevCameraPosition();
+        SetPrevCameraPosition();
     }
     
     void Update() {
-        moveWithCamera();
-        setPrevCameraPosition();
+        MoveWithCamera();
+        SetPrevCameraPosition();
     }
 
 
 
 
-    void setPrevCameraPosition() { prevCameraPosition = mainCamera.transform.position;    }
+    void SetPrevCameraPosition() { prevCameraPosition = mainCamera.transform.position;    }
 
-    void moveWithCamera() {
+    void MoveWithCamera() {
         //get change in camera position
         Vector2 currentCameraPos = mainCamera.transform.position;
         Vector2 cameraPosChange = currentCameraPos - prevCameraPosition;
