@@ -564,7 +564,7 @@ public class Player : MonoBehaviour{
         //specifically, any planets or obstacles are added to a list of collided objects
 
         //determine points to test
-        Vector2[] playerEdges = getPlayerEdgePositions();
+        Vector2[] playerEdges = getPlayerCircleEdgePositions();
 
         //check all 8 positions for collisions with planet and obstacle colliders
         List<GameObject> collisions = new List<GameObject>();
@@ -615,7 +615,7 @@ public class Player : MonoBehaviour{
         //if the point of contact is closer to the top, the player should land on the obstacle
 
         //get collision point
-        Vector2[] playerEdges = getPlayerEdgePositions();
+        Vector2[] playerEdges = getPlayerCircleEdgePositions();
         Vector2 collisionPoint = Vector2.zero;
         foreach(Vector2 point in playerEdges) {
             if (obstacle.GetComponent<BoxCollider2D>().OverlapPoint(point)) {
@@ -696,7 +696,7 @@ public class Player : MonoBehaviour{
     }
     */
 
-    Vector2[] getPlayerEdgePositions() {
+    Vector2[] getPlayerSquareEdgePositions() {
         //returns a list of 8 points around the player's center
         //if you draw a square around the player, there will be 4 points on the vertices of that square, and 4 points on the midpoints of the edges of the square
         Vector2 cent = GetComponent<CircleCollider2D>().bounds.center;
@@ -718,6 +718,42 @@ public class Player : MonoBehaviour{
         Vector2 topRightPos = cent + upAmt + rightAmt;
         Vector2 bottomLeftPos = cent + downAmt + leftAmt;
         Vector2 bottomRightPos = cent + downAmt + rightAmt;
+
+        Vector2[] positions = new Vector2[8];
+        positions[0] = bottomPos;
+        positions[1] = topPos;
+        positions[2] = leftPos;
+        positions[3] = rightPos;
+        positions[4] = topLeftPos;
+        positions[5] = topRightPos;
+        positions[6] = bottomLeftPos;
+        positions[7] = bottomRightPos;
+
+        return positions;
+    }
+
+    Vector2[] getPlayerCircleEdgePositions() {
+        //returns a list of 8 points around the player's center
+        //they are the 4 cardinal directions on a compass and the 4 combo directions
+        Vector2 cent = GetComponent<CircleCollider2D>().bounds.center;
+        Vector2 downDir = transform.up * -1;
+        Vector2 upDir = transform.up;
+        Vector2 leftDir = -perpTowardsPlanet;
+        Vector2 rightDir = perpTowardsPlanet;
+
+        Vector2 downAmt = downDir * GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
+        Vector2 upAmt = upDir * GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
+        Vector2 leftAmt = leftDir * GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
+        Vector2 rightAmt = rightDir * GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
+
+        Vector2 bottomPos = cent + downAmt;
+        Vector2 topPos = cent + upAmt;
+        Vector2 leftPos = cent + leftAmt;
+        Vector2 rightPos = cent + rightAmt;
+        Vector2 topLeftPos = cent + (upAmt + leftAmt) * Mathf.Sqrt(2) / 2;
+        Vector2 topRightPos = cent + (upAmt + rightAmt) * Mathf.Sqrt(2) / 2;
+        Vector2 bottomLeftPos = cent + (downAmt + leftAmt) *Mathf.Sqrt(2) / 2;
+        Vector2 bottomRightPos = cent + (downAmt + rightAmt) *Mathf.Sqrt(2) / 2;
 
         Vector2[] positions = new Vector2[8];
         positions[0] = bottomPos;
@@ -787,7 +823,7 @@ public class Player : MonoBehaviour{
         //specifically, any planets or obstacles are added to a list of collided objects
         
         //determine points to test
-        Vector2[] playerEdges = getPlayerEdgePositions();
+        Vector2[] playerEdges = getPlayerSquareEdgePositions();
 
         //check if any point on the player's edges is inside the obstacle
         bool isIn = false;
