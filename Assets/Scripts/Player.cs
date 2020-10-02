@@ -285,21 +285,27 @@ public class Player : MonoBehaviour{
         //does nothing if the game is in slow-mo
         //does nothing if the player is in dialogue
         if ((p != planet) && !stopTimeForRotation && !dialogueManager.IsPlayerInDialogue()) {
-            planet.ignorePlayerContact = true; //the player has some time to fall away from the planet
-            p.ignorePlayerContact = false; //if the player is going back to a planet they JUST left, they will not fall through it
-            planet = p;
-            if (isOnPlanet) {
-                freeFallSpeed = Mathf.Abs(speedOnSurface);
-                if (speedOnSurface != 0) {
-                    freeFallDirection = Vector2.Perpendicular(transform.up * -1).normalized;
-                    if (freeFallSpeed != speedOnSurface) {
-                        freeFallDirection *= -1f;
+            if (IsTooCloseToObstacle()) {
+                print("you are too close to an obstacle to take off!");
+            }
+            else {
+                planet.ignorePlayerContact = true; //the player has some time to fall away from the planet
+                p.ignorePlayerContact = false; //if the player is going back to a planet they JUST left, they will not fall through it
+                planet = p;
+                if (isOnPlanet) {
+                    freeFallSpeed = Mathf.Abs(speedOnSurface);
+                    if (speedOnSurface != 0) {
+                        freeFallDirection = Vector2.Perpendicular(transform.up * -1).normalized;
+                        if (freeFallSpeed != speedOnSurface) {
+                            freeFallDirection *= -1f;
+                        }
                     }
                 }
+                isOnPlanet = false;
+                stopTimeForRotation = true;
+                stopTimeOverlay.SetActive(true);
             }
-            isOnPlanet = false;
-            stopTimeForRotation = true;
-            stopTimeOverlay.SetActive(true);
+
         }
     }
     void FallTowardsPlanet() {
@@ -383,8 +389,7 @@ public class Player : MonoBehaviour{
 
     Vector2[] GetCorners(BoxCollider2D box) {
         //gets the corners in world space of the box collider
-        //float width = box.size.x * box.transform.lossyScale.x;
-        //float height = box.size.y * box.transform.lossyScale.y;
+        //in order, goes top left, top right, bottom left, bottom right
         float width = box.size.x;
         float height = box.size.y;
         Vector2 tll = new Vector2(-width, height) * 0.5f;
@@ -532,6 +537,13 @@ public class Player : MonoBehaviour{
             Vector2 topCorner;
             Vector2 bottomCorner;
             Vector2 touchedSide;
+            
+            if (!PlayerFacingDown()) {
+                bool temp = collidedOnLeftOfPlayer;
+                collidedOnLeftOfPlayer = collidedOnRightOfPlayer;
+                collidedOnRightOfPlayer = temp;
+            }
+
             if (collidedOnLeftOfPlayer) {
                 //collided on player's left, meaning on the obstacle's right, assuming player is facing down towards planet
                 topCorner = corners[1];
@@ -549,6 +561,23 @@ public class Player : MonoBehaviour{
             MovePlayerTouchingPoint(point, collidedOnRightOfPlayer);
 
         }
+    }
+
+    bool PlayerFacingDown() {
+        //returns true if the bottom of the player is closer to the planet than the top of the player
+        Vector2 pc = planet.centerPoint;
+        Vector2[] points = GetPlayerCircleEdgePositions();
+        Vector2 top = points[1];
+        Vector2 bottom = points[0];
+
+        float topDistX = top.x - pc.x;
+        float topDistY = top.y - pc.y;
+        float botDistX = bottom.x - pc.x;
+        float botDistY = bottom.y - pc.y;
+        float topDist = Mathf.Sqrt((topDistX * topDistX) + (topDistY * topDistY));
+        float botDist = Mathf.Sqrt((botDistX * botDistX) + (botDistY * botDistY));
+        return (botDist < topDist);
+
     }
     
     void CheckForCollisions() {
@@ -586,12 +615,15 @@ public class Player : MonoBehaviour{
         //if any of the collisions is an obstacle, land on that obstacle
         foreach (GameObject go in collisions) {
             if (go.tag == "Obstacle") {
-                if (!hitObstacleSide && !hitObstacleTop && !go.transform.parent.GetComponent<Planet>().ignorePlayerContact) {
+                //if (!hitObstacleSide && !hitObstacleTop && !go.transform.parent.GetComponent<Planet>().ignorePlayerContact) {
+                if (!hitObstacleSide && !hitObstacleTop) {
                     if (!(fallingOffObstacle && obstacle == go.GetComponent<BoxCollider2D>())) {
+                        go.transform.parent.GetComponent<Planet>().ignorePlayerContact = false;
                         HitObstacleInFall(go);
                     }
                 }
                 else if (hitObstacleSide && obstacle != go.GetComponent<BoxCollider2D>()) {
+                    go.transform.parent.GetComponent<Planet>().ignorePlayerContact = false;
                     HitObstacleInFall(go);
                 }
                 return;
@@ -625,15 +657,15 @@ public class Player : MonoBehaviour{
 
         if (leftDistance < topDistance && leftDistance < rightDistance) {
             HitObstacleOnSide(obstacle);
-            //print("hit on left side!");
+            print("hit on left side!");
         }
         else if (rightDistance < topDistance && rightDistance < leftDistance) {
             HitObstacleOnSide(obstacle);
-            //print("hit on right side!");
+            print("hit on right side!");
         }
         else{
             HitObstacleOnTop(obstacle);
-            //print("hit on top!");
+            print("hit on top!");
         }
 
 
@@ -709,7 +741,7 @@ public class Player : MonoBehaviour{
 
     Vector2[] GetPlayerCircleEdgePositions() {
         //returns a list of 8 points around the player's center
-        //the points at 0, 45, 90, 135, 180, 225, 270, and 315 degrees around the unit circle
+        //the points at 0, 30, 45, 60, 90, etc
         Vector2 cent = GetComponent<CircleCollider2D>().bounds.center;
         Vector2 downDir = transform.up * -1;
         Vector2 upDir = transform.up;
@@ -721,24 +753,45 @@ public class Player : MonoBehaviour{
         Vector2 leftAmt = leftDir * GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
         Vector2 rightAmt = rightDir * GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
 
-        Vector2 bottomPos = cent + downAmt;
-        Vector2 topPos = cent + upAmt;
-        Vector2 leftPos = cent + leftAmt;
-        Vector2 rightPos = cent + rightAmt;
-        Vector2 topLeftPos = cent + (upAmt + leftAmt) * Mathf.Sqrt(2) / 2;
-        Vector2 topRightPos = cent + (upAmt + rightAmt) * Mathf.Sqrt(2) / 2;
-        Vector2 bottomLeftPos = cent + (downAmt + leftAmt) *Mathf.Sqrt(2) / 2;
-        Vector2 bottomRightPos = cent + (downAmt + rightAmt) *Mathf.Sqrt(2) / 2;
+        Vector2 s = cent + downAmt;
+        Vector2 n = cent + upAmt;
+        Vector2 w = cent + leftAmt;
+        Vector2 e = cent + rightAmt;
 
-        Vector2[] positions = new Vector2[8];
-        positions[0] = bottomPos;
-        positions[1] = topPos;
-        positions[2] = leftPos;
-        positions[3] = rightPos;
-        positions[4] = topLeftPos;
-        positions[5] = topRightPos;
-        positions[6] = bottomLeftPos;
-        positions[7] = bottomRightPos;
+        float r2o2 = Mathf.Sqrt(2) / 2; //root 2 /2, used for 45 deg angles
+        Vector2 nw = cent + (upAmt + leftAmt) * r2o2;
+        Vector2 ne = cent + (upAmt + rightAmt) * r2o2;
+        Vector2 se = cent + (downAmt + leftAmt) * r2o2;
+        Vector2 sw = cent + (downAmt + rightAmt) * r2o2;
+
+        float r3o2 = Mathf.Sqrt(3) / 2; //root 3 /2, used for 
+        float half = 1f / 2f;
+        Vector2 nne = cent + (upAmt * r3o2) + (rightAmt * half);
+        Vector2 ene = cent + (upAmt * half) + (rightAmt * r3o2);
+        Vector2 nnw = cent + (upAmt * r3o2) + (leftAmt * half);
+        Vector2 wnw = cent + (upAmt * half) + (leftAmt * r3o2);
+        Vector2 sse = cent + (downAmt * r3o2) + (rightAmt * half);
+        Vector2 ese = cent + (downAmt * half) + (rightAmt * r3o2);
+        Vector2 ssw = cent + (downAmt * r3o2) + (leftAmt * half);
+        Vector2 wsw = cent + (downAmt * half) + (leftAmt * r3o2);
+
+        Vector2[] positions = new Vector2[16];
+        positions[0] = s;
+        positions[1] = n;
+        positions[2] = w;
+        positions[3] = e;
+        positions[4] = ne;
+        positions[5] = nw;
+        positions[6] = se;
+        positions[7] = sw;
+        positions[8] = nne;
+        positions[9] = ene;
+        positions[10] = nnw;
+        positions[11] = wnw;
+        positions[12] = sse;
+        positions[13] = ese;
+        positions[14] = ssw;
+        positions[15] = wsw;
 
         return positions;
     }
@@ -821,5 +874,25 @@ public class Player : MonoBehaviour{
                 freeFallDirection *= -1f;
             }
         }
+    }
+
+    bool IsTooCloseToObstacle() {
+        //returns true if the player is too close to an obstacle on their current planet to be able to select another planet
+
+        float minScalar = 1.2f;
+        foreach(Transform t in planet.transform) {
+            if (t.gameObject.tag == "Obstacle") {
+                BoxCollider2D coll = t.GetComponent<BoxCollider2D>();
+                Vector2[] corners = GetCorners(coll); //in order, goes top left, top right, bottom left, bottom right
+                float dist1 = FindDistanceToLine(transform.position, corners[0], corners[2]); //distance to the obstacle's left edge
+                float dist2 = FindDistanceToLine(transform.position, corners[1], corners[3]); //distance to the obstacle's right edge
+
+                if ((dist1 < GetComponent<CircleCollider2D>().radius * minScalar) || (dist2 < GetComponent<CircleCollider2D>().radius * minScalar)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

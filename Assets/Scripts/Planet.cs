@@ -34,7 +34,7 @@ public class Planet : MonoBehaviour{
         }
 
     }
-
+    
 
     private bool CheckCollisionWithPlayer() {
         if (GetDistanceToPlayerCenter() < ((GetComponent<CircleCollider2D>().radius * transform.lossyScale.x) + (player.GetComponent<CircleCollider2D>().radius * player.transform.lossyScale.x))) {
@@ -58,5 +58,26 @@ public class Planet : MonoBehaviour{
         //radius = circlecollider radius * transform.lossyscale.x
         mass = density * 2 * Mathf.PI * GetComponent<CircleCollider2D>().radius * transform.lossyScale.x;
         //print(mass);
+    }
+
+    private void OrientObstaclesTowardPlanet() {
+        foreach(Transform t in transform) {
+            if (t.gameObject.tag == "Obstacle") {
+                Vector2 bottom = t.up * -1;
+                Vector2 planetCenter = centerPoint;
+                Vector2 towardsPlanet = (planetCenter - new Vector2(t.position.x, t.position.y)).normalized;
+                float downAngle = Vector2.Angle(bottom, towardsPlanet); //angle in degrees
+                float angle = (Mathf.Atan2(towardsPlanet.y, towardsPlanet.x) * Mathf.Rad2Deg) + 90; //in degrees
+                angle -= (t.eulerAngles.z - 360f);
+                angle = angle - Mathf.CeilToInt(angle / 360f) * 360f;
+                if (angle < 0) { angle += 360f; }
+                float angleToRotate = angle;
+
+                float a = (Mathf.Atan2(towardsPlanet.y, towardsPlanet.x) * Mathf.Rad2Deg) + 90; //in degrees
+                Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
+                t.rotation = Quaternion.Slerp(t.rotation, rotation, 1);
+            }
+        }
+
     }
 }

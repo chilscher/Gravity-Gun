@@ -98,7 +98,7 @@ public class NPCDialogue : MonoBehaviour {
 
     private void OrientNPCTowardPlanet() {
         Vector2 bottom = transform.up * -1;
-        Vector2 planetCenter = planet.GetComponent<CircleCollider2D>().bounds.center;
+        Vector2 planetCenter = planet.centerPoint;
         Vector2 towardsPlanet = (planetCenter - new Vector2(transform.position.x, transform.position.y)).normalized;
         float downAngle = Vector2.Angle(bottom, towardsPlanet); //angle in degrees
         float angle = (Mathf.Atan2(towardsPlanet.y, towardsPlanet.x) * Mathf.Rad2Deg) + 90; //in degrees
