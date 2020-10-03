@@ -5,11 +5,14 @@ using UnityEngine;
 public class NPCDialogue : MonoBehaviour {
     //an NPC with the NPCDialogue script should have a circlecollider2d child to test if the player is close enough for the dialogue bubble to appear
     //they also should have a circlecollider2d of their own so the player has something to tap to interact with
+    public int npcId;
+
     public Dialogue dialogue;
     public Planet planet;
     private bool wasPlayerInRangeLastFrame = false;
     private DialogueManager dialogueManager;
     private Player player;
+
 
     private void Start() {
         player = FindObjectOfType<Player>();

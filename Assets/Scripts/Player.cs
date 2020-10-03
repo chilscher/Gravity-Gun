@@ -51,6 +51,8 @@ public class Player : MonoBehaviour{
     private bool fallingOffObstacle = false;
     private BoxCollider2D obstacle;
 
+    public bool isPaused = false;
+
     
     private void Start() {
         minimapController = minimapControllerGO.GetComponent<MinimapController>();
@@ -63,49 +65,52 @@ public class Player : MonoBehaviour{
     }
 
     private void Update() {
-        CalculateDirections();
-        if (stopTimeForRotation) {
-            RotatePlayerInStoppedTime();
-        }
-        else {
-            if (isOnPlanet) {
-                //handles movement on the surface of the planet
-                CalculateIsWalking();
-                SetWalkingDirection();
-                AccelerateFromWalk();
-                AccelerateFromFriction();
-                MoveAroundPlanet(speedOnSurface * Time.deltaTime);
-                RotatePlayerTowardsPlanet();
+        if (!isPaused) {
+            CalculateDirections();
+            if (stopTimeForRotation) {
+                RotatePlayerInStoppedTime();
             }
-            else if (hitObstacleTop) {
-                //handles movement on the surface of an obstacle
-                CalculateIsWalking();
-                SetWalkingDirection();
-                AccelerateFromWalk();
-                AccelerateFromFriction();
-                MoveAroundObstacle(speedOnSurface * Time.deltaTime);
-                RotatePlayerTowardsPlanet();
-                CheckForFallingOffObstacle();
-            }
-            else if (hitObstacleSide) {
-                //handles movement falling down the side of an obstacle
-                FallTowardsPlanet();
-                MoveTowardsPlanet();
-                MovePlayerToEdgeOfObstacle(obstacle);
-
-                RotatePlayerTowardsPlanet();
-                CheckForCollisions();
-            }
-
             else {
-                //handles movement in free-fall
-                FallTowardsPlanet();
-                MoveTowardsPlanet();
-                RotatePlayerTowardsPlanet();
-                CheckForCollisions();
+                if (isOnPlanet) {
+                    //handles movement on the surface of the planet
+                    CalculateIsWalking();
+                    SetWalkingDirection();
+                    AccelerateFromWalk();
+                    AccelerateFromFriction();
+                    MoveAroundPlanet(speedOnSurface * Time.deltaTime);
+                    RotatePlayerTowardsPlanet();
+                }
+                else if (hitObstacleTop) {
+                    //handles movement on the surface of an obstacle
+                    CalculateIsWalking();
+                    SetWalkingDirection();
+                    AccelerateFromWalk();
+                    AccelerateFromFriction();
+                    MoveAroundObstacle(speedOnSurface * Time.deltaTime);
+                    RotatePlayerTowardsPlanet();
+                    CheckForFallingOffObstacle();
+                }
+                else if (hitObstacleSide) {
+                    //handles movement falling down the side of an obstacle
+                    FallTowardsPlanet();
+                    MoveTowardsPlanet();
+                    MovePlayerToEdgeOfObstacle(obstacle);
+
+                    RotatePlayerTowardsPlanet();
+                    CheckForCollisions();
+                }
+
+                else {
+                    //handles movement in free-fall
+                    FallTowardsPlanet();
+                    MoveTowardsPlanet();
+                    RotatePlayerTowardsPlanet();
+                    CheckForCollisions();
+                }
             }
+            minimapController.ShowPlayerMovementDirection(this);
         }
-        minimapController.ShowPlayerMovementDirection(this);
+
     }
 
     void Move(float add_x, float add_y) {
@@ -184,7 +189,9 @@ public class Player : MonoBehaviour{
         float planet_center_y = planet.centerPoint.y;
         float x = transform.position.x - planet_center_x;
         float y = transform.position.y - planet_center_y;
-        float r = (planet.GetComponent<CircleCollider2D>().radius * planet.transform.localScale.x) + GetComponent<CircleCollider2D>().radius;
+        float planetRad = planet.GetComponent<CircleCollider2D>().radius * planet.transform.localScale.x;
+        if (planet.transform.parent != null && planet.transform.parent.tag == "Planet") { planetRad *= planet.transform.parent.localScale.x; }
+        float r = (planetRad) + GetComponent<CircleCollider2D>().radius;
         float s = distance * -1;
         float theta = (s / r) + Mathf.Atan(y / x);
         if (x < 0) {
@@ -248,7 +255,6 @@ public class Player : MonoBehaviour{
         Vector2 p = proj.normalized;
         if (p == -perpTowardsPlanet) { speedOnSurface *= -1; }//movement is set to be counterclockwise
         else if (p != perpTowardsPlanet) { speedOnSurface = 0; }//there is no movement tangent to the surface of the planet (ex: the player was not moving when they clicked on the new planet)
-
     }
 
     void CalculateIsWalking() {
@@ -284,7 +290,7 @@ public class Player : MonoBehaviour{
         //does nothing if the player already is targeting that planet
         //does nothing if the game is in slow-mo
         //does nothing if the player is in dialogue
-        if ((p != planet) && !stopTimeForRotation && !dialogueManager.IsPlayerInDialogue()) {
+        if ((p != planet) && !stopTimeForRotation && !dialogueManager.IsPlayerInDialogue() && !isPaused) {
             if (IsTooCloseToObstacle()) {
                 print("you are too close to an obstacle to take off!");
             }
@@ -701,6 +707,9 @@ public class Player : MonoBehaviour{
 
             planet = obstacle.transform.parent.GetComponent<Planet>();
         }
+
+        SetSpeedOnPlanet();
+        SetDirectionOnPlanet();
     }
 
     Vector2[] GetPlayerSquareEdgePositions() {
