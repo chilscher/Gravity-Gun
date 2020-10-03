@@ -811,11 +811,38 @@ public class Player : MonoBehaviour{
         //used in hitObstacleInFall
         //gets the shortest distance that can be drawn from the solitaryPoint to a line that connects lineEndpoint1 and lineEndpoint2
         //uses code found at http://csharphelper.com/blog/2016/09/find-the-shortest-distance-between-a-point-and-a-line-segment-in-c/
+        //will return a point inside the line, or one of the endpoints
 
-        float dx = lineEndpoint2.x - lineEndpoint1.x;
-        float dy = lineEndpoint2.y - lineEndpoint1.y;
+        float dx = lineEndpoint2.x - lineEndpoint1.x; //the x length of the line
+        float dy = lineEndpoint2.y - lineEndpoint1.y; //the y length of the line
         float t = ((solitaryPoint.x - lineEndpoint1.x) * dx + (solitaryPoint.y - lineEndpoint1.y) * dy) / (dx * dx + dy * dy);
         Vector2 closest = new Vector2(lineEndpoint1.x + t * dx, lineEndpoint1.y + t * dy);
+
+        //that is the closest point on the line, assuming the line is infinite
+        //if the "closest" point is not on the line segment defined by the endpoints, then move it to one of the endpoints
+        float x1c = closest.x - lineEndpoint1.x;
+        float y1c = closest.y - lineEndpoint1.y;
+        float x2c = closest.x - lineEndpoint2.x;
+        float y2c = closest.y - lineEndpoint2.y;
+
+        //calculate the distances between the 3 points: the "closest" point and the two line endpoints
+        float lineLength = Mathf.Abs(Mathf.Sqrt((dx * dx) + (dy * dy)));
+        float distFromEndpoint1 = Mathf.Abs(Mathf.Sqrt((x1c * x1c) + (y1c * y1c)));
+        float distFromEndpoint2 = Mathf.Abs(Mathf.Sqrt((x2c * x2c) + (y2c * y2c)));
+        
+        //if the "closest" point is further than either endpoint
+        if (distFromEndpoint1 > lineLength || distFromEndpoint2 > lineLength) {
+            //find which endpoint the "closest" point is closer to
+            //replace the "closest" point with that endpoint
+            if (distFromEndpoint1 > distFromEndpoint2) {
+                closest = lineEndpoint2;
+            }
+            else {
+                closest = lineEndpoint1;
+            }
+        }
+        
+        //return the distance to the closest point
         dx = solitaryPoint.x - closest.x;
         dy = solitaryPoint.y - closest.y;
         return Mathf.Sqrt(dx * dx + dy * dy);
