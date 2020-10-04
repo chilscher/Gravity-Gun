@@ -6,11 +6,12 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 public class CameraController : MonoBehaviour{
-    public GameObject untouchableButton;
+    //public GameObject untouchableButton;
     //objects who will not be detected by touch will be tagged with "Ingore Touch". usually objects that are part of another interactable (children of minimap, children of dialogue bubble, etc)
     //objects that, when tapped, will not do anything, and also block taps on objects behind them, have the "Untappable" tag (joystick, minimap, etc)
     public List<GameObject> checkCircleForTouch; //objects who have a defined circlecollider, outside of which they cannot be interacted with (minimap, etc)
     public List<GameObject> checkCapsuleForTouch;
+    //Player player;
 
     private void Update() {
 #if UNITY_EDITOR
@@ -51,7 +52,7 @@ public class CameraController : MonoBehaviour{
         }
 
         //find touched objects in world space
-        Vector3 wp = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 wp = Camera.main.ScreenToWorldPoint(pos);
         Vector2 touchPos = new Vector2(wp.x, wp.y);
         if (Physics2D.OverlapPoint(touchPos) != null) {
             Collider2D[] overlaps = Physics2D.OverlapPointAll(touchPos);
@@ -73,6 +74,7 @@ public class CameraController : MonoBehaviour{
                 float ydiff = Input.mousePosition.y - g.GetComponent<CircleCollider2D>().bounds.center.y;
                 float dist = Mathf.Sqrt(xdiff * xdiff + ydiff * ydiff);
                 if (!(dist <= g.GetComponent<CircleCollider2D>().radius * g.transform.lossyScale.x)) {
+                    //transform.parent.GetComponent<SpriteRenderer>().color = new Color(Random.value, Random.value, Random.value);
                     nonIgnoredTouchedObjects.Remove(g);
                 }
             }
@@ -91,7 +93,8 @@ public class CameraController : MonoBehaviour{
         //ex: the player script handles the joystick inputs
         //ex: the player cannot click planets through the minimap
         foreach (GameObject g in gos) {
-            if (g.tag == "Untappable") { return null;}
+            if (g.tag == "Untappable") {
+                return null;}
         }
 
         //if an NPC or their dialogue bubble is touched, return it

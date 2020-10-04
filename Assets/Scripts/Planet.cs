@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Planet : MonoBehaviour{
     public Vector2 centerPoint;
@@ -12,10 +13,6 @@ public class Planet : MonoBehaviour{
     public float coefficientOfFriction = 0.6f; //0 is no friction, 1 is equal to normal force
                                                //an ice planet may have 0.2, a normal planet may have 0.6, and a planet with super-friction may have 1
                                                //what would a glue planet have???
-    
-    private void OnMouseDown() {
-        //GameObject.Find("Player").GetComponent<Player>().clickedPlanet(this);
-    }
 
     public void Clicked() {
         player.ClickedPlanet(this);
