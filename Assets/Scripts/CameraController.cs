@@ -10,8 +10,7 @@ public class CameraController : MonoBehaviour{
     //objects who will not be detected by touch will be tagged with "Ingore Touch". usually objects that are part of another interactable (children of minimap, children of dialogue bubble, etc)
     //objects that, when tapped, will not do anything, and also block taps on objects behind them, have the "Untappable" tag (joystick, minimap, etc)
     public List<GameObject> checkCircleForTouch; //objects who have a defined circlecollider, outside of which they cannot be interacted with (minimap, etc)
-    public List<GameObject> checkCapsuleForTouch;
-    //Player player;
+
 
     private void Update() {
 #if UNITY_EDITOR
@@ -25,10 +24,22 @@ public class CameraController : MonoBehaviour{
         if (Input.touchCount > 0) {
             for (int i = 0; i< Input.touches.Length; i++) {
                 if (Input.touches[i].phase == TouchPhase.Began) {
+                    //do not register touches inside any of the checkCircleForTouch objects
+                    bool notRegisterTouch = false;
+                    foreach(GameObject g in checkCircleForTouch) {
+                        float xdiff = Input.touches[i].position.x - g.GetComponent<CircleCollider2D>().bounds.center.x;
+                        float ydiff = Input.touches[i].position.y - g.GetComponent<CircleCollider2D>().bounds.center.y;
+                        float dist = Mathf.Sqrt(xdiff * xdiff + ydiff * ydiff);
+                        if (dist <= g.GetComponent<CircleCollider2D>().radius * g.transform.lossyScale.x) {
+                            notRegisterTouch = true;
+                        }
+                    }
+                    if (!notRegisterTouch) {
+                        List<GameObject> objs = FindAllObjectCollisions(Input.touches[i].position);
+                        GameObject o = ChooseObjectToTouch(objs);
+                        InteractWithObject(o);
+                    }
 
-                    List<GameObject> objs = FindAllObjectCollisions(Input.touches[i].position);
-                    GameObject o = ChooseObjectToTouch(objs);
-                    InteractWithObject(o);
                 }
             }
         }
@@ -68,15 +79,6 @@ public class CameraController : MonoBehaviour{
         foreach (GameObject g in allTouchedObjects) {
             if (g.tag == "Ignore Touch") {
                 nonIgnoredTouchedObjects.Remove(g);
-            }
-            else if (checkCircleForTouch.Contains(g)) {
-                float xdiff = Input.mousePosition.x - g.GetComponent<CircleCollider2D>().bounds.center.x;
-                float ydiff = Input.mousePosition.y - g.GetComponent<CircleCollider2D>().bounds.center.y;
-                float dist = Mathf.Sqrt(xdiff * xdiff + ydiff * ydiff);
-                if (!(dist <= g.GetComponent<CircleCollider2D>().radius * g.transform.lossyScale.x)) {
-                    //transform.parent.GetComponent<SpriteRenderer>().color = new Color(Random.value, Random.value, Random.value);
-                    nonIgnoredTouchedObjects.Remove(g);
-                }
             }
         }
 

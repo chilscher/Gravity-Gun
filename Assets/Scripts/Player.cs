@@ -268,6 +268,9 @@ public class Player : MonoBehaviour{
         if (dialogueManager.IsPlayerInDialogue()) {
             walking = false;
         }
+        
+        GetComponent<Animator>().SetBool("IsWalking", walking);
+
     }
 
     void SetWalkingDirection() {
@@ -277,6 +280,10 @@ public class Player : MonoBehaviour{
             if (Input.GetKey(leftKey)) { walkingClockwiseScalar = -1f; }
             if (joystick.GetComponent<FixedJoystick>().Horizontal > 0) { walkingClockwiseScalar = 1f; }
             if (joystick.GetComponent<FixedJoystick>().Horizontal < 0) { walkingClockwiseScalar = -1f; }
+            
+            Vector3 scale = transform.localScale;
+            scale.x = walkingClockwiseScalar;
+            transform.localScale = scale;
         }
     }
 
