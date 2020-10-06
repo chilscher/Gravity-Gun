@@ -15,8 +15,11 @@ public class DialogueManager : MonoBehaviour {
     private bool typingSentence = false;
     private string currentSentence;
 
-    [HideInInspector]
-    public NPCDialogue ongoingDialogue;
+    private Dialogue dialogue;
+    public NPC npc;
+
+    //[HideInInspector]
+    //public NPC ongoingDialogue;
 
 	// Use this for initialization
 	void Start () {
@@ -26,8 +29,8 @@ public class DialogueManager : MonoBehaviour {
         //transform.Find("Dialogue Text").gameObject.SetActive(false);
     }
 
-	public void StartDialogue (NPCDialogue dialogueTrigger)
-	{
+    /*
+	public void StartDialogue (NPC dialogueTrigger)	{
         //animator.SetBool("IsOpen", true);
 
         //nameText.text = dialogue.name;
@@ -48,9 +51,82 @@ public class DialogueManager : MonoBehaviour {
 
 		DisplayNextSentence();
 	}
+    */
+    public void StartDialogue() {
+        //animator.SetBool("IsOpen", true);
 
-	public void DisplayNextSentence ()
-	{
+        //nameText.text = dialogue.name;
+        ShowDialogueBox(true);
+        //dialogueText.transform.parent.Find("Bubble Background").gameObject.SetActive(true);
+        //dialogueText.gameObject.SetActive(true);
+
+        //dialogueInProgress = dialogueTrigger;
+
+        sentences.Clear();
+
+        foreach (string sentence in dialogue.sentences) {
+            sentences.Enqueue(sentence);
+            //print(sentence);
+        }
+
+        DisplayNextSentence();
+    }
+
+    public void StartQuestDialogue(NPC npc) {
+        //animator.SetBool("IsOpen", true);
+
+        dialogue = npc.quest.npcDialogue;
+        //print(dialogue.sentences.Length);
+        this.npc = npc;
+        StartDialogue();
+        /*
+        //nameText.text = dialogue.name;
+        ongoingDialogue = dialogueTrigger;
+        ShowDialogueBox(true);
+        //dialogueText.transform.parent.Find("Bubble Background").gameObject.SetActive(true);
+        //dialogueText.gameObject.SetActive(true);
+
+        //dialogueInProgress = dialogueTrigger;
+        Dialogue dialogue = dialogueTrigger.dialogue;
+
+        sentences.Clear();
+
+        foreach (string sentence in dialogue.sentences) {
+            sentences.Enqueue(sentence);
+        }
+
+        DisplayNextSentence();
+        */
+    }
+
+    public void StartNormalDialogue(NPC npc) {
+        //animator.SetBool("IsOpen", true);
+
+        dialogue = npc.normalDialogue;
+        this.npc = npc;
+
+        StartDialogue();
+        /*
+        //nameText.text = dialogue.name;
+        ongoingDialogue = dialogueTrigger;
+        ShowDialogueBox(true);
+        //dialogueText.transform.parent.Find("Bubble Background").gameObject.SetActive(true);
+        //dialogueText.gameObject.SetActive(true);
+
+        //dialogueInProgress = dialogueTrigger;
+        Dialogue dialogue = dialogueTrigger.dialogue;
+
+        sentences.Clear();
+
+        foreach (string sentence in dialogue.sentences) {
+            sentences.Enqueue(sentence);
+        }
+
+        DisplayNextSentence();
+        */
+    }
+
+    public void DisplayNextSentence (){
 
         //dialogueText.GetComponent<Text>().text = sentence;
         if (typingSentence) {
@@ -70,8 +146,7 @@ public class DialogueManager : MonoBehaviour {
         }
 	}
 
-	IEnumerator TypeSentence (string sentence)
-	{
+	IEnumerator TypeSentence (string sentence)	{
         typingSentence = true;
         currentSentence = sentence;
         dialogueText.GetComponent<Text>().text = "";
@@ -85,10 +160,11 @@ public class DialogueManager : MonoBehaviour {
 		}
 	}
 
-	void EndDialogue()
-	{
+	void EndDialogue() { 
         //dialogueInProgress = null;
         ShowDialogueBox(false);
+        npc.AccomplishDialogueTask();
+        npc.EndDialogue();
         //animator.SetBool("IsOpen", false);
     }
 

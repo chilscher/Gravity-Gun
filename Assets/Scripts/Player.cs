@@ -257,14 +257,14 @@ public class Player : MonoBehaviour{
         //counterclockwise sets speedOnSurface to be negative
         Vector3 s = perpTowardsPlanet;
         Vector3 v = freeFallDirection * freeFallSpeed;
-        print(v);
-        print(s);
+        //print(v);
+        //print(s);
         Vector3 proj = Vector3.Project(v, s);
-        print(proj);
+        //print(proj);
         Vector2 p = proj.normalized;
         if (p == -perpTowardsPlanet) { speedOnSurface *= -1; }//movement is set to be counterclockwise
         else if (p != perpTowardsPlanet) { speedOnSurface = 0; }//there is no movement tangent to the surface of the planet (ex: the player was not moving when they clicked on the new planet)
-        print(speedOnSurface);
+        //print(speedOnSurface);
         /*
         Vector3 scale = transform.localScale;
         bool walkingClockwise = (speedOnSurface > 0);

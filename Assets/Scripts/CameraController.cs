@@ -125,8 +125,8 @@ public class CameraController : MonoBehaviour{
         //"taps" an object
         if (obj == null) { return; }
         if (obj.tag == "Planet") { obj.GetComponent<Planet>().Clicked(); }
-        if (obj.tag == "NPC") { obj.GetComponent<NPCDialogue>().TappedNPC(); }
-        if (obj.tag == "Thought Bubble") { obj.transform.parent.GetComponent<NPCDialogue>().TappedBubble(); }
+        if (obj.tag == "NPC") { obj.GetComponent<NPC>().TappedNPC(); }
+        if (obj.tag == "Thought Bubble") { obj.transform.parent.GetComponent<NPC>().TappedBubble(); }
         if (obj.tag == "Dialogue Box") { FindObjectOfType<DialogueManager>().DisplayNextSentence(); }
     }
 

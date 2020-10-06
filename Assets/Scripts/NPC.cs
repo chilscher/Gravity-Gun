@@ -2,46 +2,62 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NPCDialogue : MonoBehaviour {
+public class NPC : MonoBehaviour {
     //an NPC with the NPCDialogue script should have a circlecollider2d child to test if the player is close enough for the dialogue bubble to appear
     //they also should have a circlecollider2d of their own so the player has something to tap to interact with
     public int npcId;
 
-    public Dialogue dialogue;
-    public Planet planet;
+    public Dialogue normalDialogue;
+    //public Planet planet;
     private bool wasPlayerInRangeLastFrame = false;
     private DialogueManager dialogueManager;
     private Player player;
+
+    public Quest quest;
 
 
     private void Start() {
         player = FindObjectOfType<Player>();
         dialogueManager = FindObjectOfType<DialogueManager>();
-        transform.Find("Bubble").gameObject.SetActive(false);
-        OrientNPCTowardPlanet();
+        transform.Find("Normal Bubble").gameObject.SetActive(false);
+        transform.Find("Quest Bubble").gameObject.SetActive(false);
+        //OrientNPCTowardPlanet();
     }
 
     private void Update() {
         bool isPlayerInRangeThisFrame = IsPlayerInRange();
         if (!wasPlayerInRangeLastFrame && isPlayerInRangeThisFrame) {
-            ShowThoughtBubble();
+            ShowDialogueBubble();
+            //ShowThoughtBubble();
         }
         else if (wasPlayerInRangeLastFrame && !isPlayerInRangeThisFrame) {
-            HideThoughtBubble();
+            HideDialogueBubble();
+            //HideThoughtBubble();
           
         }
         wasPlayerInRangeLastFrame = isPlayerInRangeThisFrame;
 
     }
 
+    /*
     public void TriggerDialogue() {
         FindObjectOfType<DialogueManager>().StartDialogue(this);
+    }
+    */
+
+    public void TriggerQuestDialogue() {
+        FindObjectOfType<DialogueManager>().StartQuestDialogue(this);
+    }
+
+    public void TriggerNormalDialogue() {
+        FindObjectOfType<DialogueManager>().StartNormalDialogue(this);
     }
 
     private bool IsPlayerInRange() {
         //checks to see if the player is close enough to have the NPC speech bubble pop up
         //returns false if the player is on a different planet from the NPC
-        if ((player.planet != planet) || !player.isOnPlanet) {
+        //assumes the NPC is a direct child of its planet
+        if ((player.planet != transform.parent.GetComponent<Planet>()) || !player.isOnPlanet) {
             return false;
         }
         Vector2 center = transform.Find("Interact Range").GetComponent<CircleCollider2D>().bounds.center;
@@ -57,12 +73,35 @@ public class NPCDialogue : MonoBehaviour {
         return false;
     }
 
+    private void ShowDialogueBubble() {
+        quest = FindObjectOfType<QuestManager>().FindNPCDialogue(npcId);
+        if (quest == null) {
+            ShowNormalBubble();
+        }
+        else {
+            ShowQuestBubble();
+        }
+    }
+
+    private void ShowQuestBubble() {
+        transform.Find("Normal Bubble").gameObject.SetActive(false);
+        transform.Find("Quest Bubble").gameObject.SetActive(true);
+
+    }
+
+    private void ShowNormalBubble() {
+        transform.Find("Normal Bubble").gameObject.SetActive(true);
+        transform.Find("Quest Bubble").gameObject.SetActive(false);
+    }
+
+    /*
     private void ShowThoughtBubble() {
         transform.Find("Bubble").gameObject.SetActive(true);
     }
-
-    private void HideThoughtBubble() {
-        transform.Find("Bubble").gameObject.SetActive(false);
+    */
+    private void HideDialogueBubble() {
+        transform.Find("Normal Bubble").gameObject.SetActive(false);
+        transform.Find("Quest Bubble").gameObject.SetActive(false);
     }
 
     public void TappedBubble() {
@@ -77,10 +116,14 @@ public class NPCDialogue : MonoBehaviour {
         if (!player.isOnPlanet || player.speedOnSurface != 0f) {
             return;
         }
-        if (transform.Find("Bubble").gameObject.activeSelf) {
+        if (transform.Find("Quest Bubble").gameObject.activeSelf) {
             //print("npc");
-            TriggerDialogue();
-            HideThoughtBubble();
+            TriggerQuestDialogue();
+            HideDialogueBubble();
+        }
+        else if (transform.Find("Normal Bubble").gameObject.activeSelf) {
+            TriggerNormalDialogue();
+            HideDialogueBubble();
         }
         else {
             //if the dialogueManager is already handling the current dialogue, then show the next bit of dialogue.
@@ -92,13 +135,13 @@ public class NPCDialogue : MonoBehaviour {
 
     private bool IsDialogueOngoing() {
 
-        if ((!transform.Find("Bubble").gameObject.activeSelf) && dialogueManager.ongoingDialogue == this) {
+        if ((!transform.Find("Normal Bubble").gameObject.activeSelf) && (!transform.Find("Quest Bubble").gameObject.activeSelf) &&dialogueManager.npc == this) {
             return true;
         }
         return false;
     }
 
-
+    /*
     private void OrientNPCTowardPlanet() {
         Vector2 bottom = transform.up * -1;
         Vector2 planetCenter = planet.centerPoint;
@@ -115,7 +158,17 @@ public class NPCDialogue : MonoBehaviour {
         transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
 
     }
+    */
 
+    public void AccomplishDialogueTask() {
+        FindObjectOfType<QuestManager>().AccomplishTask(QuestManager.QuestType.Talk, npcId);
+        //quest.CompleteQuest();
+    }
 
+    public void EndDialogue() {
+        if (IsPlayerInRange()) {
+            ShowDialogueBubble();
+        }
+    }
 
 }
