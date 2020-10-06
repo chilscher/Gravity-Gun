@@ -134,7 +134,7 @@ public class Player : MonoBehaviour{
     //FUNCTIONS THAT DEAL WITH THE PLAYER BEING ON A PLANET
     // ---------------------------------------------------
 
-    void setMaxWalkingSpeed() {
+    void SetMaxWalkingSpeed() {
         //sets the player's maxWalkingSpeed on the surface of a planet.
         //scales opposite of the planet's coefficientOfFriction: higher friction = lower max speed
         maxWalkingSpeedOnPlanet = maxWalkingSpeed / planet.coefficientOfFriction;
@@ -223,17 +223,23 @@ public class Player : MonoBehaviour{
             //enter slow time mode and rotate player until they are facing the right way
             stopTimeForRotation = true;
             stopTimeOverlay.SetActive(true);
+            //stop animations during slow time
+            GetComponent<Animator>().enabled = false;
         }
         isOnPlanet = true;
         planet = p;
         speedOnSurface = 0f;
+        CalculateDirections();
         SetSpeedOnPlanet();
         SetDirectionOnPlanet();
-        setMaxWalkingSpeed();
+        SetMaxWalkingSpeed();
 
         hitObstacleSide = false;
         hitObstacleTop = false;
         fallingOffObstacle = false;
+
+        //set animator booleans
+        GetComponent<Animator>().SetBool("IsFalling", false);
     }
 
     void SetSpeedOnPlanet() {
@@ -251,10 +257,21 @@ public class Player : MonoBehaviour{
         //counterclockwise sets speedOnSurface to be negative
         Vector3 s = perpTowardsPlanet;
         Vector3 v = freeFallDirection * freeFallSpeed;
+        print(v);
+        print(s);
         Vector3 proj = Vector3.Project(v, s);
+        print(proj);
         Vector2 p = proj.normalized;
         if (p == -perpTowardsPlanet) { speedOnSurface *= -1; }//movement is set to be counterclockwise
         else if (p != perpTowardsPlanet) { speedOnSurface = 0; }//there is no movement tangent to the surface of the planet (ex: the player was not moving when they clicked on the new planet)
+        print(speedOnSurface);
+        /*
+        Vector3 scale = transform.localScale;
+        bool walkingClockwise = (speedOnSurface > 0);
+        scale.x = -1f;
+        if (walkingClockwise) { scale.x = 1f; }
+        transform.localScale = scale;
+        */
     }
 
     void CalculateIsWalking() {
@@ -269,6 +286,7 @@ public class Player : MonoBehaviour{
             walking = false;
         }
         
+        //animate the player as walking
         GetComponent<Animator>().SetBool("IsWalking", walking);
 
     }
@@ -281,6 +299,7 @@ public class Player : MonoBehaviour{
             if (joystick.GetComponent<FixedJoystick>().Horizontal > 0) { walkingClockwiseScalar = 1f; }
             if (joystick.GetComponent<FixedJoystick>().Horizontal < 0) { walkingClockwiseScalar = -1f; }
             
+            //make the player face left or right
             Vector3 scale = transform.localScale;
             scale.x = walkingClockwiseScalar;
             transform.localScale = scale;
@@ -317,6 +336,11 @@ public class Player : MonoBehaviour{
                 isOnPlanet = false;
                 stopTimeForRotation = true;
                 stopTimeOverlay.SetActive(true);
+
+                //stop all player animations in stopped time
+                GetComponent<Animator>().enabled = false;
+                //make stop the player from walking
+                GetComponent<Animator>().SetBool("IsWalking", false);
             }
 
         }
@@ -392,6 +416,18 @@ public class Player : MonoBehaviour{
         else {
             stopTimeForRotation = false;
             stopTimeOverlay.SetActive(false);
+
+            //once time-stop is over, allow the animator to animate the player again
+            GetComponent<Animator>().enabled = true;
+
+            //set animator booleans
+            if (isOnPlanet) {
+                GetComponent<Animator>().SetBool("IsFalling", false);
+            }
+            else {
+                GetComponent<Animator>().SetBool("IsFalling", true);
+            }
+            
         }
         transform.Rotate(0, 0, angleToRotate * clockwiseScalar);
     }
