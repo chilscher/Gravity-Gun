@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class Planet : MonoBehaviour{
+
+    public int id;
     public Vector2 centerPoint;
     public Player player;
     public bool ignorePlayerContact = false; //do not let the player touch this planet until they are at least one body distance away
@@ -13,6 +15,8 @@ public class Planet : MonoBehaviour{
     public float coefficientOfFriction = 0.6f; //0 is no friction, 1 is equal to normal force
                                                //an ice planet may have 0.2, a normal planet may have 0.6, and a planet with super-friction may have 1
                                                //what would a glue planet have???
+
+
 
     public void Clicked() {
         player.ClickedPlanet(this);

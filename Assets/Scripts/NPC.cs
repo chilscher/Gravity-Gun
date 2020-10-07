@@ -8,11 +8,11 @@ public class NPC : MonoBehaviour {
     public int npcId;
 
     public Dialogue normalDialogue;
-    //public Planet planet;
     private bool wasPlayerInRangeLastFrame = false;
     private DialogueManager dialogueManager;
     private Player player;
 
+    [HideInInspector] [System.NonSerialized]
     public Quest quest;
 
 
@@ -21,29 +21,20 @@ public class NPC : MonoBehaviour {
         dialogueManager = FindObjectOfType<DialogueManager>();
         transform.Find("Normal Bubble").gameObject.SetActive(false);
         transform.Find("Quest Bubble").gameObject.SetActive(false);
-        //OrientNPCTowardPlanet();
     }
 
     private void Update() {
         bool isPlayerInRangeThisFrame = IsPlayerInRange();
         if (!wasPlayerInRangeLastFrame && isPlayerInRangeThisFrame) {
-            ShowDialogueBubble();
-            //ShowThoughtBubble();
+            ShowThoughtBubble();
         }
         else if (wasPlayerInRangeLastFrame && !isPlayerInRangeThisFrame) {
-            HideDialogueBubble();
-            //HideThoughtBubble();
+            HideThoughtBubble();
           
         }
         wasPlayerInRangeLastFrame = isPlayerInRangeThisFrame;
 
     }
-
-    /*
-    public void TriggerDialogue() {
-        FindObjectOfType<DialogueManager>().StartDialogue(this);
-    }
-    */
 
     public void TriggerQuestDialogue() {
         FindObjectOfType<DialogueManager>().StartQuestDialogue(this);
@@ -73,7 +64,7 @@ public class NPC : MonoBehaviour {
         return false;
     }
 
-    private void ShowDialogueBubble() {
+    private void ShowThoughtBubble() {
         quest = FindObjectOfType<QuestManager>().FindNPCDialogue(npcId);
         if (quest == null) {
             ShowNormalBubble();
@@ -93,13 +84,8 @@ public class NPC : MonoBehaviour {
         transform.Find("Normal Bubble").gameObject.SetActive(true);
         transform.Find("Quest Bubble").gameObject.SetActive(false);
     }
-
-    /*
-    private void ShowThoughtBubble() {
-        transform.Find("Bubble").gameObject.SetActive(true);
-    }
-    */
-    private void HideDialogueBubble() {
+    
+    private void HideThoughtBubble() {
         transform.Find("Normal Bubble").gameObject.SetActive(false);
         transform.Find("Quest Bubble").gameObject.SetActive(false);
     }
@@ -119,11 +105,11 @@ public class NPC : MonoBehaviour {
         if (transform.Find("Quest Bubble").gameObject.activeSelf) {
             //print("npc");
             TriggerQuestDialogue();
-            HideDialogueBubble();
+            HideThoughtBubble();
         }
         else if (transform.Find("Normal Bubble").gameObject.activeSelf) {
             TriggerNormalDialogue();
-            HideDialogueBubble();
+            HideThoughtBubble();
         }
         else {
             //if the dialogueManager is already handling the current dialogue, then show the next bit of dialogue.
@@ -141,33 +127,13 @@ public class NPC : MonoBehaviour {
         return false;
     }
 
-    /*
-    private void OrientNPCTowardPlanet() {
-        Vector2 bottom = transform.up * -1;
-        Vector2 planetCenter = planet.centerPoint;
-        Vector2 towardsPlanet = (planetCenter - new Vector2(transform.position.x, transform.position.y)).normalized;
-        float downAngle = Vector2.Angle(bottom, towardsPlanet); //angle in degrees
-        float angle = (Mathf.Atan2(towardsPlanet.y, towardsPlanet.x) * Mathf.Rad2Deg) + 90; //in degrees
-        angle -= (transform.eulerAngles.z - 360f);
-        angle = angle - Mathf.CeilToInt(angle / 360f) * 360f;
-        if (angle < 0) { angle += 360f; }
-        float angleToRotate = angle;
-
-        float a = (Mathf.Atan2(towardsPlanet.y, towardsPlanet.x) * Mathf.Rad2Deg) + 90; //in degrees
-        Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
-        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
-
-    }
-    */
-
     public void AccomplishDialogueTask() {
         FindObjectOfType<QuestManager>().AccomplishTask(QuestManager.QuestType.Talk, npcId);
-        //quest.CompleteQuest();
     }
 
     public void EndDialogue() {
         if (IsPlayerInRange()) {
-            ShowDialogueBubble();
+            ShowThoughtBubble();
         }
     }
 

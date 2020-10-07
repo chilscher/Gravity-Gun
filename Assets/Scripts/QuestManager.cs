@@ -5,8 +5,9 @@ using UnityEngine;
 public class QuestManager : MonoBehaviour{
 
 
-    public enum QuestType { Talk };
+    public enum QuestType { Talk, VisitPlanet };
     
+    [HideInInspector] [System.NonSerialized]
     public List<Quest> activeQuests = new List<Quest>();
     public Quest[] allQuests;
 
@@ -18,9 +19,6 @@ public class QuestManager : MonoBehaviour{
                 activeQuests.Add(q);
             }
         }
-
-        //firstQuest.isActive = true;
-        //activeQuests.Add(firstQuest);
     }
 
     public void AccomplishTask(QuestType type, int param) {
@@ -34,15 +32,24 @@ public class QuestManager : MonoBehaviour{
 
         //remove completed quests from list
         foreach(Quest comp in completedQuests) {
+            //get all quests that have the completed quest as a requirement
+            List<Quest> newQuests = GetAllQuestsWithPrerequisite(comp);
+
+            foreach(Quest q in newQuests) {
+                if (q.PrerequisitesMet()) {
+                    q.StartQuest();
+                    activeQuests.Add(q);
+                }
+            }
+
             activeQuests.Remove(comp);
-            //activeQuests.Remove(comp);
         }
         
     }
 
-    public Quest GetQuestFromName(string name) {
+    public Quest GetQuestFromID(int id) {
         foreach(Quest q in allQuests) {
-            if (q.name == name) {
+            if (q.id == id) {
                 return q;
             }
         }
@@ -51,9 +58,9 @@ public class QuestManager : MonoBehaviour{
 
     private void AssignPrerequisites() {
         foreach(Quest q in allQuests) {
-            q.prerequisites = new Quest[q.prerequisiteQuestNames.Length];
-            for(int i =0; i<q.prerequisiteQuestNames.Length; i++) {
-                q.prerequisites[i] = GetQuestFromName(q.prerequisiteQuestNames[i]);
+            q.prerequisites = new Quest[q.prerequisiteQuestIds.Length];
+            for(int i =0; i<q.prerequisiteQuestIds.Length; i++) {
+                q.prerequisites[i] = GetQuestFromID(q.prerequisiteQuestIds[i]);
             }
         }
     }
@@ -68,6 +75,19 @@ public class QuestManager : MonoBehaviour{
         }
         return null;
     }
+
+    public List<Quest> GetAllQuestsWithPrerequisite(Quest prereq) {
+        List<Quest> quests = new List<Quest>();
+        foreach(Quest q in allQuests) {
+            foreach(Quest p in q.prerequisites) {
+                if (p == prereq) {
+                    quests.Add(q);
+                }
+            }
+        }
+        return quests;
+    }
+
     
 
 }

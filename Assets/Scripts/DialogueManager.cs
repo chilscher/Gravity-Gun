@@ -15,7 +15,9 @@ public class DialogueManager : MonoBehaviour {
     private bool typingSentence = false;
     private string currentSentence;
 
+    [System.NonSerialized]
     private Dialogue dialogue;
+    [HideInInspector] [System.NonSerialized]
     public NPC npc;
 
     //[HideInInspector]

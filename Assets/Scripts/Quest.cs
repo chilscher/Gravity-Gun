@@ -6,32 +6,35 @@ using UnityEngine;
 public class Quest{
 
     public string name;
+    public int id;
     public QuestManager.QuestType objective;
     public int param;
-    public string[] prerequisiteQuestNames;
+    public int[] prerequisiteQuestIds;
     public Dialogue npcDialogue;
     [HideInInspector]
     public bool isActive = false;
-    [HideInInspector]
+    [HideInInspector] [System.NonSerialized]
     public Quest[] prerequisites;
-
-    // Start is called before the first frame update
-    void Start(){
-        //Debug.Log(objective + " " + param);
-    }
-
-    // Update is called once per frame
-    void Update() {
-        
-    }
+    [HideInInspector]
+    public bool isComplete = false;
 
     public void CompleteQuest() {
         isActive = false;
+        isComplete = true;
         Debug.Log("quest complete!");
     }
 
     public void StartQuest() {
         isActive = true;
         Debug.Log(name + " is now active! " + objective + " " + param);
+    }
+
+    public bool PrerequisitesMet() {
+        foreach(Quest q in prerequisites) {
+            if (!q.isComplete) {
+                return false;
+            }
+        }
+        return true;
     }
 }

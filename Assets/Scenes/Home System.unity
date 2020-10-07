@@ -457,6 +457,11 @@ PrefabInstance:
       propertyPath: m_Mass
       value: 1.6251702
       objectReference: {fileID: 0}
+    - target: {fileID: 2238959681720501213, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: id
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3961ab2469c94874992db4f261304aad, type: 3}
 --- !u!1 &227280605
@@ -1595,17 +1600,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 567af6e21ee2f3045b5b71ac2eef4563, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  activeQuests: []
   allQuests:
   - name: first quest
+    id: 1
     objective: 0
     param: 1
-    prerequisiteQuestNames: []
+    prerequisiteQuestIds: 
     npcDialogue:
       sentences:
       - Hello, welcome to Gravity Gun!
     isActive: 0
-    prerequisites: []
+    isComplete: 0
+  - name: to the moon
+    id: 2
+    objective: 1
+    param: 2
+    prerequisiteQuestIds: 01000000
+    npcDialogue:
+      sentences: []
+    isActive: 0
+    isComplete: 0
 --- !u!1 &1025821948
 GameObject:
   m_ObjectHideFlags: 0
@@ -1844,7 +1858,7 @@ PrefabInstance:
     - target: {fileID: 4783293898651574768, guid: 870902be89c71c54eb2a324b1fac4f19,
         type: 3}
       propertyPath: normalDialogue.sentences.Array.data[0]
-      value: Hi
+      value: Hi, how are ya
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 870902be89c71c54eb2a324b1fac4f19, type: 3}
@@ -2041,6 +2055,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Mass
       value: 52.981674
+      objectReference: {fileID: 0}
+    - target: {fileID: 2238959681720501213, guid: 3961ab2469c94874992db4f261304aad,
+        type: 3}
+      propertyPath: id
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3961ab2469c94874992db4f261304aad, type: 3}
@@ -2301,7 +2320,6 @@ MonoBehaviour:
   dialogueText: {fileID: 227280605}
   bubbleBackground: {fileID: 405429386}
   characterLimitPerLine: 28
-  npc: {fileID: 0}
 --- !u!222 &1465552678
 CanvasRenderer:
   m_ObjectHideFlags: 0

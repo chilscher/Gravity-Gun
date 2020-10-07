@@ -240,6 +240,8 @@ public class Player : MonoBehaviour{
 
         //set animator booleans
         GetComponent<Animator>().SetBool("IsFalling", false);
+
+        FindObjectOfType<QuestManager>().AccomplishTask(QuestManager.QuestType.VisitPlanet, planet.id);
     }
 
     void SetSpeedOnPlanet() {
