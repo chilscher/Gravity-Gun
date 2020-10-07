@@ -437,6 +437,8 @@ public class Player : MonoBehaviour{
         if (shootTimeRemaining <= 0) {
             stopTimeForRotation = true;
             stopTimeForShoot = false;
+
+            transform.Find("Arm with Gun").gameObject.SetActive(false);
         }
     }
 
@@ -460,10 +462,17 @@ public class Player : MonoBehaviour{
         Vector3 scale = transform.localScale;
         scale.x = dir;
         transform.localScale = scale;
-        
+
         //figure out total angle that gun needs to move
         //figure out how much time we have to move the gun
         //set all those as variables
+        transform.Find("Arm with Gun").gameObject.SetActive(true);
+
+
+        float a = (Mathf.Atan2(newPlanetVector.y, newPlanetVector.x) * Mathf.Rad2Deg) + 90; //in degrees
+        if (a > 180) { a = 180 - (a - 180); }//turn all angles into under 180
+        Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
+        transform.Find("Arm with Gun").rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
     }
 
 

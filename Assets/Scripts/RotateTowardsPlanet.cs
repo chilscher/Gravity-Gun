@@ -10,10 +10,8 @@ public class RotateTowardsPlanet : MonoBehaviour {
     private void Start() {
         Orient();
     }
-
     
     private void Orient() {
-        //comment more
         Vector2 bottom = transform.up * -1;
         Vector2 planetCenter = transform.parent.GetComponent<Planet>().centerPoint;
         Vector2 towardsPlanet = (planetCenter - new Vector2(transform.position.x, transform.position.y)).normalized;
@@ -27,9 +25,5 @@ public class RotateTowardsPlanet : MonoBehaviour {
         float a = (Mathf.Atan2(towardsPlanet.y, towardsPlanet.x) * Mathf.Rad2Deg) + 90; //in degrees
         Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
         transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
-
     }
-
-
-
 }

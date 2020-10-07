@@ -17,7 +17,7 @@ public class NPC : MonoBehaviour {
 
 
     private void Start() {
-        //comment more
+        //set some variables and hide the thought bubbles
         player = FindObjectOfType<Player>();
         dialogueManager = FindObjectOfType<DialogueManager>();
         transform.Find("Normal Bubble").gameObject.SetActive(false);
@@ -25,7 +25,7 @@ public class NPC : MonoBehaviour {
     }
 
     private void Update() {
-        //comment more
+        //if player entered or exited the conversation range, show/hide the relevant thought bubble
         bool isPlayerInRangeThisFrame = IsPlayerInRange();
         if (!wasPlayerInRangeLastFrame && isPlayerInRangeThisFrame) {
             ShowThoughtBubble();
@@ -36,16 +36,6 @@ public class NPC : MonoBehaviour {
         }
         wasPlayerInRangeLastFrame = isPlayerInRangeThisFrame;
 
-    }
-
-    public void TriggerQuestDialogue() {
-        //comment more
-        FindObjectOfType<DialogueManager>().StartQuestDialogue(this);
-    }
-
-    public void TriggerNormalDialogue() {
-        //comment more
-        FindObjectOfType<DialogueManager>().StartNormalDialogue(this);
     }
 
     private bool IsPlayerInRange() {
@@ -69,7 +59,7 @@ public class NPC : MonoBehaviour {
     }
 
     private void ShowThoughtBubble() {
-        //comment more
+        //if this npc is part of an active quest, show the quest thought bubble. otherwise show the normal dialogue thought bubble
         quest = FindObjectOfType<QuestManager>().FindNPCDialogue(npcId);
         if (quest == null) {
             ShowNormalBubble();
@@ -80,20 +70,20 @@ public class NPC : MonoBehaviour {
     }
 
     private void ShowQuestBubble() {
-        //comment more
+        //shows the quest thought bubble and hides the normal one
         transform.Find("Normal Bubble").gameObject.SetActive(false);
         transform.Find("Quest Bubble").gameObject.SetActive(true);
 
     }
 
     private void ShowNormalBubble() {
-        //comment more
+        //shows the normal thought bubble and hides the quest one
         transform.Find("Normal Bubble").gameObject.SetActive(true);
         transform.Find("Quest Bubble").gameObject.SetActive(false);
     }
     
     private void HideThoughtBubble() {
-        //comment more
+        //hides both the normal and quest thought bubbles
         transform.Find("Normal Bubble").gameObject.SetActive(false);
         transform.Find("Quest Bubble").gameObject.SetActive(false);
     }
@@ -111,13 +101,12 @@ public class NPC : MonoBehaviour {
             return;
         }
         if (transform.Find("Quest Bubble").gameObject.activeSelf) {
-            //print("npc");
-            TriggerQuestDialogue();
             HideThoughtBubble();
+            FindObjectOfType<DialogueManager>().StartQuestDialogue(this);
         }
         else if (transform.Find("Normal Bubble").gameObject.activeSelf) {
-            TriggerNormalDialogue();
             HideThoughtBubble();
+            FindObjectOfType<DialogueManager>().StartNormalDialogue(this);
         }
         else {
             //if the dialogueManager is already handling the current dialogue, then show the next bit of dialogue.
@@ -128,21 +117,20 @@ public class NPC : MonoBehaviour {
     }
 
     private bool IsDialogueOngoing() {
-        //comment more
-
-        if ((!transform.Find("Normal Bubble").gameObject.activeSelf) && (!transform.Find("Quest Bubble").gameObject.activeSelf) &&dialogueManager.npc == this) {
+        //if the dialogue manager is handling a conversation with this npc, return true
+        if ((!transform.Find("Normal Bubble").gameObject.activeSelf) && (!transform.Find("Quest Bubble").gameObject.activeSelf) && dialogueManager.npc == this) {
             return true;
         }
         return false;
     }
 
     public void AccomplishDialogueTask() {
-        //comment more
+        //tell the quest manager you have just finished a dialogue task
         FindObjectOfType<QuestManager>().AccomplishTask(QuestManager.QuestType.Talk, npcId);
     }
 
     public void EndDialogue() {
-        //comment more
+        //called when the player ends a conversation, and shows the dialogue thought bubble again
         if (IsPlayerInRange()) {
             ShowThoughtBubble();
         }
