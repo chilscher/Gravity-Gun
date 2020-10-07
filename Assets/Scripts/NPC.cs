@@ -17,6 +17,7 @@ public class NPC : MonoBehaviour {
 
 
     private void Start() {
+        //comment more
         player = FindObjectOfType<Player>();
         dialogueManager = FindObjectOfType<DialogueManager>();
         transform.Find("Normal Bubble").gameObject.SetActive(false);
@@ -24,6 +25,7 @@ public class NPC : MonoBehaviour {
     }
 
     private void Update() {
+        //comment more
         bool isPlayerInRangeThisFrame = IsPlayerInRange();
         if (!wasPlayerInRangeLastFrame && isPlayerInRangeThisFrame) {
             ShowThoughtBubble();
@@ -37,10 +39,12 @@ public class NPC : MonoBehaviour {
     }
 
     public void TriggerQuestDialogue() {
+        //comment more
         FindObjectOfType<DialogueManager>().StartQuestDialogue(this);
     }
 
     public void TriggerNormalDialogue() {
+        //comment more
         FindObjectOfType<DialogueManager>().StartNormalDialogue(this);
     }
 
@@ -65,6 +69,7 @@ public class NPC : MonoBehaviour {
     }
 
     private void ShowThoughtBubble() {
+        //comment more
         quest = FindObjectOfType<QuestManager>().FindNPCDialogue(npcId);
         if (quest == null) {
             ShowNormalBubble();
@@ -75,17 +80,20 @@ public class NPC : MonoBehaviour {
     }
 
     private void ShowQuestBubble() {
+        //comment more
         transform.Find("Normal Bubble").gameObject.SetActive(false);
         transform.Find("Quest Bubble").gameObject.SetActive(true);
 
     }
 
     private void ShowNormalBubble() {
+        //comment more
         transform.Find("Normal Bubble").gameObject.SetActive(true);
         transform.Find("Quest Bubble").gameObject.SetActive(false);
     }
     
     private void HideThoughtBubble() {
+        //comment more
         transform.Find("Normal Bubble").gameObject.SetActive(false);
         transform.Find("Quest Bubble").gameObject.SetActive(false);
     }
@@ -120,6 +128,7 @@ public class NPC : MonoBehaviour {
     }
 
     private bool IsDialogueOngoing() {
+        //comment more
 
         if ((!transform.Find("Normal Bubble").gameObject.activeSelf) && (!transform.Find("Quest Bubble").gameObject.activeSelf) &&dialogueManager.npc == this) {
             return true;
@@ -128,10 +137,12 @@ public class NPC : MonoBehaviour {
     }
 
     public void AccomplishDialogueTask() {
+        //comment more
         FindObjectOfType<QuestManager>().AccomplishTask(QuestManager.QuestType.Talk, npcId);
     }
 
     public void EndDialogue() {
+        //comment more
         if (IsPlayerInRange()) {
             ShowThoughtBubble();
         }

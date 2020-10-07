@@ -30,107 +30,37 @@ public class DialogueManager : MonoBehaviour {
         //transform.Find("Bubble Background").gameObject.SetActive(false);
         //transform.Find("Dialogue Text").gameObject.SetActive(false);
     }
-
-    /*
-	public void StartDialogue (NPC dialogueTrigger)	{
-        //animator.SetBool("IsOpen", true);
-
-        //nameText.text = dialogue.name;
-        ongoingDialogue = dialogueTrigger;
-        ShowDialogueBox(true);
-        //dialogueText.transform.parent.Find("Bubble Background").gameObject.SetActive(true);
-        //dialogueText.gameObject.SetActive(true);
-
-        //dialogueInProgress = dialogueTrigger;
-        Dialogue dialogue = dialogueTrigger.dialogue;
-
-		sentences.Clear();
-
-		foreach (string sentence in dialogue.sentences)
-		{
-			sentences.Enqueue(sentence);
-		}
-
-		DisplayNextSentence();
-	}
-    */
+    
     public void StartDialogue() {
-        //animator.SetBool("IsOpen", true);
-
-        //nameText.text = dialogue.name;
+        //comment more
         ShowDialogueBox(true);
-        //dialogueText.transform.parent.Find("Bubble Background").gameObject.SetActive(true);
-        //dialogueText.gameObject.SetActive(true);
-
-        //dialogueInProgress = dialogueTrigger;
 
         sentences.Clear();
 
         foreach (string sentence in dialogue.sentences) {
             sentences.Enqueue(sentence);
-            //print(sentence);
         }
 
         DisplayNextSentence();
     }
 
     public void StartQuestDialogue(NPC npc) {
-        //animator.SetBool("IsOpen", true);
-
+        //comment more
         dialogue = npc.quest.npcDialogue;
-        //print(dialogue.sentences.Length);
         this.npc = npc;
         StartDialogue();
-        /*
-        //nameText.text = dialogue.name;
-        ongoingDialogue = dialogueTrigger;
-        ShowDialogueBox(true);
-        //dialogueText.transform.parent.Find("Bubble Background").gameObject.SetActive(true);
-        //dialogueText.gameObject.SetActive(true);
-
-        //dialogueInProgress = dialogueTrigger;
-        Dialogue dialogue = dialogueTrigger.dialogue;
-
-        sentences.Clear();
-
-        foreach (string sentence in dialogue.sentences) {
-            sentences.Enqueue(sentence);
-        }
-
-        DisplayNextSentence();
-        */
     }
 
     public void StartNormalDialogue(NPC npc) {
-        //animator.SetBool("IsOpen", true);
-
+        //comment more
         dialogue = npc.normalDialogue;
         this.npc = npc;
 
         StartDialogue();
-        /*
-        //nameText.text = dialogue.name;
-        ongoingDialogue = dialogueTrigger;
-        ShowDialogueBox(true);
-        //dialogueText.transform.parent.Find("Bubble Background").gameObject.SetActive(true);
-        //dialogueText.gameObject.SetActive(true);
-
-        //dialogueInProgress = dialogueTrigger;
-        Dialogue dialogue = dialogueTrigger.dialogue;
-
-        sentences.Clear();
-
-        foreach (string sentence in dialogue.sentences) {
-            sentences.Enqueue(sentence);
-        }
-
-        DisplayNextSentence();
-        */
     }
 
-    public void DisplayNextSentence (){
-
-        //dialogueText.GetComponent<Text>().text = sentence;
+    public void DisplayNextSentence () {
+        //comment more
         if (typingSentence) {
             StopAllCoroutines();
             dialogueText.GetComponent<Text>().text = currentSentence;
@@ -148,7 +78,8 @@ public class DialogueManager : MonoBehaviour {
         }
 	}
 
-	IEnumerator TypeSentence (string sentence)	{
+	IEnumerator TypeSentence (string sentence) {
+        //comment more
         typingSentence = true;
         currentSentence = sentence;
         dialogueText.GetComponent<Text>().text = "";
@@ -162,12 +93,11 @@ public class DialogueManager : MonoBehaviour {
 		}
 	}
 
-	void EndDialogue() { 
-        //dialogueInProgress = null;
+	void EndDialogue() {
+        //comment more
         ShowDialogueBox(false);
         npc.AccomplishDialogueTask();
         npc.EndDialogue();
-        //animator.SetBool("IsOpen", false);
     }
 
     public bool IsPlayerInDialogue() {

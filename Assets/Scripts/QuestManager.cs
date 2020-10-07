@@ -12,6 +12,7 @@ public class QuestManager : MonoBehaviour{
     public Quest[] allQuests;
 
     public void Start() {
+        //comment more
         AssignPrerequisites();
         foreach (Quest q in allQuests) {
             if (q.prerequisites.Length == 0) {
@@ -22,6 +23,7 @@ public class QuestManager : MonoBehaviour{
     }
 
     public void AccomplishTask(QuestType type, int param) {
+        //comment more
         List<Quest> completedQuests = new List<Quest>();
         foreach(Quest q in activeQuests) {
             if (q.objective == type && q.param == param) {
@@ -48,7 +50,8 @@ public class QuestManager : MonoBehaviour{
     }
 
     public Quest GetQuestFromID(int id) {
-        foreach(Quest q in allQuests) {
+        //comment more
+        foreach (Quest q in allQuests) {
             if (q.id == id) {
                 return q;
             }
@@ -57,7 +60,8 @@ public class QuestManager : MonoBehaviour{
     }
 
     private void AssignPrerequisites() {
-        foreach(Quest q in allQuests) {
+        //comment more
+        foreach (Quest q in allQuests) {
             q.prerequisites = new Quest[q.prerequisiteQuestIds.Length];
             for(int i =0; i<q.prerequisiteQuestIds.Length; i++) {
                 q.prerequisites[i] = GetQuestFromID(q.prerequisiteQuestIds[i]);
@@ -66,6 +70,7 @@ public class QuestManager : MonoBehaviour{
     }
 
     public Quest FindNPCDialogue(int npcId) {
+        //comment more
         foreach (Quest q in activeQuests) {
             if (q.objective == QuestType.Talk) {
                 if (q.param == npcId) {
@@ -77,6 +82,7 @@ public class QuestManager : MonoBehaviour{
     }
 
     public List<Quest> GetAllQuestsWithPrerequisite(Quest prereq) {
+        //comment more
         List<Quest> quests = new List<Quest>();
         foreach(Quest q in allQuests) {
             foreach(Quest p in q.prerequisites) {

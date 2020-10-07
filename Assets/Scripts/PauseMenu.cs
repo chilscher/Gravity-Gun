@@ -7,19 +7,22 @@ public class PauseMenu : MonoBehaviour{
     public Player player;
 
     public void Start() {
+        //comment more
         foreach (Transform t in transform) {
             t.gameObject.SetActive(false);
         }
     }
 
     public void PauseGame() {
-        foreach(Transform t in transform) {
+        //comment more
+        foreach (Transform t in transform) {
             t.gameObject.SetActive(true);
             player.isPaused = true;
         }
     }
 
     public void ResumeGame() {
+        //comment more
         foreach (Transform t in transform) {
             t.gameObject.SetActive(false);
             player.isPaused = false;

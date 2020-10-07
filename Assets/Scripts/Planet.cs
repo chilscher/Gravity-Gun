@@ -19,15 +19,18 @@ public class Planet : MonoBehaviour{
 
 
     public void Clicked() {
+        //comment more
         player.ClickedPlanet(this);
     }
 
     private void Start() {
+        //comment more
         player = GameObject.Find("Player").GetComponent<Player>();
         centerPoint = GetComponent<CircleCollider2D>().bounds.center;
         CalculateMass();
     }
     private void Update() {
+        //comment more
         if (ignorePlayerContact) {
             if (GetDistanceToPlayerCenter() > ((GetComponent<CircleCollider2D>().radius * transform.lossyScale.x) + (player.GetComponent<CircleCollider2D>().radius * player.transform.lossyScale.x * 2))) {
                 ignorePlayerContact = false;
@@ -38,6 +41,7 @@ public class Planet : MonoBehaviour{
     
 
     private bool CheckCollisionWithPlayer() {
+        //comment more
         if (GetDistanceToPlayerCenter() < ((GetComponent<CircleCollider2D>().radius * transform.lossyScale.x) + (player.GetComponent<CircleCollider2D>().radius * player.transform.lossyScale.x))) {
             return true;
         }
@@ -46,6 +50,7 @@ public class Planet : MonoBehaviour{
 
 
     public float GetDistanceToPlayerCenter() {
+        //comment more
         float distance_x = player.transform.position.x - centerPoint.x;
         float distance_y = player.transform.position.y - centerPoint.y;
         float distance = Mathf.Sqrt((distance_x * distance_x) + (distance_y * distance_y));
@@ -61,6 +66,7 @@ public class Planet : MonoBehaviour{
         //print(mass);
     }
 
+    /*
     private void OrientObstaclesTowardPlanet() {
         foreach(Transform t in transform) {
             if (t.gameObject.tag == "Obstacle") {
@@ -81,4 +87,5 @@ public class Planet : MonoBehaviour{
         }
 
     }
+    */
 }

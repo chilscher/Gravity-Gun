@@ -13,6 +13,7 @@ public class RotateTowardsPlanet : MonoBehaviour {
 
     
     private void Orient() {
+        //comment more
         Vector2 bottom = transform.up * -1;
         Vector2 planetCenter = transform.parent.GetComponent<Planet>().centerPoint;
         Vector2 towardsPlanet = (planetCenter - new Vector2(transform.position.x, transform.position.y)).normalized;

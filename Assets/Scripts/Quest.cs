@@ -5,6 +5,7 @@ using UnityEngine;
 [System.Serializable]
 public class Quest{
 
+    //comment more
     public string name;
     public int id;
     public QuestManager.QuestType objective;
@@ -19,18 +20,21 @@ public class Quest{
     public bool isComplete = false;
 
     public void CompleteQuest() {
+        //comment more
         isActive = false;
         isComplete = true;
         Debug.Log("quest complete!");
     }
 
     public void StartQuest() {
+        //comment more
         isActive = true;
         Debug.Log(name + " is now active! " + objective + " " + param);
     }
 
     public bool PrerequisitesMet() {
-        foreach(Quest q in prerequisites) {
+        //comment more
+        foreach (Quest q in prerequisites) {
             if (!q.isComplete) {
                 return false;
             }

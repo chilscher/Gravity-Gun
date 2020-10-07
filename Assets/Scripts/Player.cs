@@ -51,7 +51,11 @@ public class Player : MonoBehaviour{
     private bool fallingOffObstacle = false;
     private BoxCollider2D obstacle;
 
+    //comment more
     public bool isPaused = false;
+    private bool stopTimeForShoot = false;
+    public float stopTimeShootDuration = 1f;
+    private float shootTimeRemaining;
 
     
     private void Start() {
@@ -59,15 +63,15 @@ public class Player : MonoBehaviour{
         dialogueManager = FindObjectOfType<DialogueManager>();
         //the player should land on their planet right away, to set maxWalkingSpeed
         LandOnPlanet(planet);
-
-
-        //testDialogue.TriggerDialogue();
     }
 
     private void Update() {
         if (!isPaused) {
             CalculateDirections();
-            if (stopTimeForRotation) {
+            if (stopTimeForShoot) {
+                ShootTowardsPlanetInStoppedTime();
+            }
+            else if (stopTimeForRotation) {
                 RotatePlayerInStoppedTime();
             }
             else {
@@ -238,7 +242,7 @@ public class Player : MonoBehaviour{
         hitObstacleTop = false;
         fallingOffObstacle = false;
 
-        //set animator booleans
+        //set animator conditions
         GetComponent<Animator>().SetBool("IsFalling", false);
 
         FindObjectOfType<QuestManager>().AccomplishTask(QuestManager.QuestType.VisitPlanet, planet.id);
@@ -259,21 +263,11 @@ public class Player : MonoBehaviour{
         //counterclockwise sets speedOnSurface to be negative
         Vector3 s = perpTowardsPlanet;
         Vector3 v = freeFallDirection * freeFallSpeed;
-        //print(v);
-        //print(s);
         Vector3 proj = Vector3.Project(v, s);
-        //print(proj);
         Vector2 p = proj.normalized;
         if (p == -perpTowardsPlanet) { speedOnSurface *= -1; }//movement is set to be counterclockwise
         else if (p != perpTowardsPlanet) { speedOnSurface = 0; }//there is no movement tangent to the surface of the planet (ex: the player was not moving when they clicked on the new planet)
-        //print(speedOnSurface);
-        /*
-        Vector3 scale = transform.localScale;
-        bool walkingClockwise = (speedOnSurface > 0);
-        scale.x = -1f;
-        if (walkingClockwise) { scale.x = 1f; }
-        transform.localScale = scale;
-        */
+
     }
 
     void CalculateIsWalking() {
@@ -325,6 +319,7 @@ public class Player : MonoBehaviour{
             else {
                 planet.ignorePlayerContact = true; //the player has some time to fall away from the planet
                 p.ignorePlayerContact = false; //if the player is going back to a planet they JUST left, they will not fall through it
+                SetUpShoot(planet, p);
                 planet = p;
                 if (isOnPlanet) {
                     freeFallSpeed = Mathf.Abs(speedOnSurface);
@@ -335,10 +330,8 @@ public class Player : MonoBehaviour{
                         }
                     }
                 }
+                //stopTimeForRotation = true;
                 isOnPlanet = false;
-                stopTimeForRotation = true;
-                stopTimeOverlay.SetActive(true);
-
                 //stop all player animations in stopped time
                 GetComponent<Animator>().enabled = false;
                 //make stop the player from walking
@@ -422,7 +415,7 @@ public class Player : MonoBehaviour{
             //once time-stop is over, allow the animator to animate the player again
             GetComponent<Animator>().enabled = true;
 
-            //set animator booleans
+            //set animator conditions
             if (isOnPlanet) {
                 GetComponent<Animator>().SetBool("IsFalling", false);
             }
@@ -434,7 +427,44 @@ public class Player : MonoBehaviour{
         transform.Rotate(0, 0, angleToRotate * clockwiseScalar);
     }
     
+    private void ShootTowardsPlanetInStoppedTime() {
+        //comment more
 
+        //if still in the moving-gun phase, move the gun
+        //if after that, then shoot the gun
+
+        shootTimeRemaining -= Time.deltaTime;
+        if (shootTimeRemaining <= 0) {
+            stopTimeForRotation = true;
+            stopTimeForShoot = false;
+        }
+    }
+
+    private void SetUpShoot(Planet oldPlanet, Planet newPlanet) {
+        //comment more
+        stopTimeForShoot = true;
+        shootTimeRemaining = stopTimeShootDuration;
+        stopTimeOverlay.SetActive(true);
+
+        //flip player sprite to face new planet
+        Vector2 towardsOldPlanet = (oldPlanet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized; //normalized, points toward old planet
+        Vector2 perpTowardsOldPlanet = Vector2.Perpendicular(towardsOldPlanet);
+        Vector2 newPlanetVector = (newPlanet.centerPoint - new Vector2(transform.position.x, transform.position.y)); //points to the new planet
+        Vector3 proj = Vector3.Project(newPlanetVector, perpTowardsOldPlanet); //projection of the new planet vector onto the perpendicular one
+        Vector2 p = proj.normalized; //will be either equal to or opposite the perpendicular vector
+
+        int dir = 1; //by default, face the player clockwise
+        if (p == -perpTowardsOldPlanet) { dir = -1; }//if planet is to the left, face player counterclockwise
+        
+        //apply new direction
+        Vector3 scale = transform.localScale;
+        scale.x = dir;
+        transform.localScale = scale;
+        
+        //figure out total angle that gun needs to move
+        //figure out how much time we have to move the gun
+        //set all those as variables
+    }
 
 
 
@@ -509,7 +539,6 @@ public class Player : MonoBehaviour{
     }
 
     void MovePlayerTouchingPoint(Vector2 point, bool rightSide) {
-        
         //takes the right bound of the player's circleCollider and moves the player so that it touches point
         //if rightSide is false, then moves to fit the left circlecollider bound
         
@@ -973,7 +1002,6 @@ public class Player : MonoBehaviour{
                 }
             }
         }
-
         return false;
     }
 }
