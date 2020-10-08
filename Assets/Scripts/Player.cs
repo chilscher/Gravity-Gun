@@ -53,12 +53,22 @@ public class Player : MonoBehaviour{
 
     //comment more
     public bool isPaused = false;
+    private bool stopTimeForAim = false;
     private bool stopTimeForShoot = false;
-    public float stopTimeShootDuration = 1f;
-    private float shootTimeRemaining;
+    //public float stopTimeShootDuration = 1f;
+    public float armRotationDuration = 1f;
+    private float shootTimeCount;
 
+    private Quaternion beforeShootingRotation;
+    private Quaternion shootingRotation;
+
+    public float beamSpeed = 1f;
+    private Vector2 originalBeamPos;
+
+    private bool disableAnimatorNextFrame = false;
     
     private void Start() {
+        originalBeamPos = transform.Find("Arm with Gun").Find("Beam").localPosition;
         minimapController = minimapControllerGO.GetComponent<MinimapController>();
         dialogueManager = FindObjectOfType<DialogueManager>();
         //the player should land on their planet right away, to set maxWalkingSpeed
@@ -68,7 +78,11 @@ public class Player : MonoBehaviour{
     private void Update() {
         if (!isPaused) {
             CalculateDirections();
-            if (stopTimeForShoot) {
+            if (disableAnimatorNextFrame) {
+                GetComponent<Animator>().enabled = false;
+                disableAnimatorNextFrame = false;
+            }
+            if (stopTimeForShoot || stopTimeForAim) {
                 ShootTowardsPlanetInStoppedTime();
             }
             else if (stopTimeForRotation) {
@@ -333,7 +347,7 @@ public class Player : MonoBehaviour{
                 //stopTimeForRotation = true;
                 isOnPlanet = false;
                 //stop all player animations in stopped time
-                GetComponent<Animator>().enabled = false;
+                //GetComponent<Animator>().enabled = false;
                 //make stop the player from walking
                 GetComponent<Animator>().SetBool("IsWalking", false);
             }
@@ -411,6 +425,7 @@ public class Player : MonoBehaviour{
         else {
             stopTimeForRotation = false;
             stopTimeOverlay.SetActive(false);
+            planet.ShowBorder(false);
 
             //once time-stop is over, allow the animator to animate the player again
             GetComponent<Animator>().enabled = true;
@@ -429,24 +444,58 @@ public class Player : MonoBehaviour{
     
     private void ShootTowardsPlanetInStoppedTime() {
         //comment more
+        
+        if (stopTimeForAim) {
+            shootTimeCount += Time.deltaTime;
+            transform.Find("Arm with Gun").rotation = Quaternion.Slerp(beforeShootingRotation, shootingRotation, (shootTimeCount / armRotationDuration));
+            if (shootTimeCount >= armRotationDuration) {
+                stopTimeForRotation = true;
+                stopTimeForAim = false;
+                stopTimeForShoot = true;
 
-        //if still in the moving-gun phase, move the gun
-        //if after that, then shoot the gun
-
-        shootTimeRemaining -= Time.deltaTime;
-        if (shootTimeRemaining <= 0) {
-            stopTimeForRotation = true;
-            stopTimeForShoot = false;
-
-            transform.Find("Arm with Gun").gameObject.SetActive(false);
+                transform.Find("Arm with Gun").Find("Beam").gameObject.SetActive(true);
+                shootTimeCount = 0;
+            }
         }
+        
+        else if (stopTimeForShoot) {
+
+            shootTimeCount += Time.deltaTime;
+
+            Vector2 pos = transform.Find("Arm with Gun").Find("Beam").localPosition;
+            pos.y -= beamSpeed * Time.deltaTime;
+            transform.Find("Arm with Gun").Find("Beam").localPosition = pos;
+            if (planet.GetComponent<CircleCollider2D>().OverlapPoint(transform.Find("Arm with Gun").Find("Beam").position)) {
+                stopTimeForRotation = true;
+                GetComponent<Animator>().SetBool("IsShooting", false);
+                disableAnimatorNextFrame = true;
+                //GetComponent<Animator>().enabled = false;
+                stopTimeForAim = false;
+                stopTimeForShoot = false;
+
+                transform.Find("Arm with Gun").Find("Beam").gameObject.SetActive(false);
+                transform.Find("Arm with Gun").Find("Beam").localPosition = originalBeamPos;
+
+                planet.ShowBorder(true);
+
+                transform.Find("Arm with Gun").rotation = Quaternion.Slerp(shootingRotation, beforeShootingRotation, 1);
+                transform.Find("Arm with Gun").gameObject.SetActive(false);
+
+
+            }
+        }
+        
     }
 
     private void SetUpShoot(Planet oldPlanet, Planet newPlanet) {
         //comment more
-        stopTimeForShoot = true;
-        shootTimeRemaining = stopTimeShootDuration;
+
+        //starts the aiming process
+        stopTimeForAim = true;
+        stopTimeForShoot = false;
+        shootTimeCount = 0f;
         stopTimeOverlay.SetActive(true);
+        GetComponent<Animator>().SetBool("IsShooting", true);
 
         //flip player sprite to face new planet
         Vector2 towardsOldPlanet = (oldPlanet.centerPoint - new Vector2(transform.position.x, transform.position.y)).normalized; //normalized, points toward old planet
@@ -463,16 +512,16 @@ public class Player : MonoBehaviour{
         scale.x = dir;
         transform.localScale = scale;
 
-        //figure out total angle that gun needs to move
-        //figure out how much time we have to move the gun
-        //set all those as variables
+        //show the gun arm and hide the beam
         transform.Find("Arm with Gun").gameObject.SetActive(true);
+        transform.Find("Arm with Gun").Find("Beam").gameObject.SetActive(false);
 
-
+        //sets the starting and ending angles for the gun-arm's rotation towards the target planet
         float a = (Mathf.Atan2(newPlanetVector.y, newPlanetVector.x) * Mathf.Rad2Deg) + 90; //in degrees
         if (a > 180) { a = 180 - (a - 180); }//turn all angles into under 180
-        Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward);
-        transform.Find("Arm with Gun").rotation = Quaternion.Slerp(transform.rotation, rotation, 1);
+        Quaternion rotation = Quaternion.AngleAxis(a, Vector3.forward * dir);
+        beforeShootingRotation = transform.Find("Arm with Gun").rotation;
+        shootingRotation = rotation;
     }
 
 

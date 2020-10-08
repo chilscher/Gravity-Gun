@@ -66,6 +66,10 @@ public class Planet : MonoBehaviour{
         //print(mass);
     }
 
+    public void ShowBorder(bool cond) {
+        transform.Find("Border").gameObject.SetActive(cond);
+    }
+
     /*
     private void OrientObstaclesTowardPlanet() {
         foreach(Transform t in transform) {
